@@ -25,6 +25,7 @@ def uart_transmit():
 def uart_receive():
   write(get_now() + ': Listening...\n')
   timer_stamp = 0
+  last_line = ''
   while True:
     buff = ''
     if char:
@@ -34,11 +35,9 @@ def uart_receive():
       buff = ' ' + buff
     current_time_stamp = get_time_stamp()
     if timer_stamp < current_time_stamp:
-      write('\033[F')
-      write('\n'+ get_now() + ': Got: ')
-    else:
-      write('\033[F')
-    write(str(buff)+'\n')
+      last_line = '\033[F' + '\n'+ get_now() + ': Got: '
+    last_line+=str(buff)
+    write(last_line+'\n')
     sys.stdout.flush()
     timer_stamp = get_time_stamp() + 50000
 
