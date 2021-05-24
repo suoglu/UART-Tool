@@ -251,7 +251,7 @@ if __name__ == '__main__':
   listener_daemon.start()
   listener_alive = True
   cin = ''
-  
+
   while True: #main loop for send
     try:
       # if not listener_alive:
@@ -385,13 +385,15 @@ if __name__ == '__main__':
             if item.startswith('0x'):
               toSend = int(item, 16)
             elif item.startswith('0d'):
-              toSend = int(item, 10) 
+              toSend = int(item, 10)
+            elif item.startswith('0o'):
+              toSend = int(item, 8) 
             elif item.startswith('0b') or bin_ow:
               toSend = int(cin, 2)
             elif dec_ow:
               toSend = int(item, 10) 
             else:
-              toSend = int(item)
+              toSend = int(item, 16)
           except:
             error_str+=(item + ' is not a valid number!\n')
             if safe_tx:
