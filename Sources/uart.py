@@ -133,18 +133,37 @@ def uart_listener(): #TODO: keep the prompt already written in terminal when new
 if __name__ == '__main__':
   baud = 115200
   serial_path = '/dev/ttyUSB'
+  data_size = serial.EIGHTBITS
+  stop_size = serial.STOPBITS_ONE
   par = serial.PARITY_NONE
   par_str = 'no'
   search_range = 10
   #check arguments for custom settings
   while len(sys.argv) > 1:
     current = sys.argv.pop(-1)  
-    if current.isnumeric():
-      current = int(current)
-      if current < 50:
-        search_range = current
+    if current.isnumeric() or current == '1.5' or current == '1,5':
+      if(current == '1,5'):
+        current = 1.5
       else:
-        baud = current
+        current = float(current)
+      if current < 20 and current > 10:
+        search_range = int(current)
+      elif current == 8:
+        data_size = serial.EIGHTBITS
+      elif current == 7:
+        data_size = serial.SEVENBITS
+      elif current == 6:
+        data_size = serial.SIXBITS
+      elif current == 5:
+        data_size = serial.FIVEBITS
+      elif current == 2:
+        stop_size = serial.STOPBITS_TWO
+      elif current == 1.5:
+        stop_size = serial.STOPBITS_ONE_POINT_FIVE
+      elif current == 1:
+        stop_size = serial.STOPBITS_ONE
+      elif current > 1999:
+        baud = int(current)
     elif current == 'even' or current.casefold() == 'e':
       par = serial.PARITY_EVEN
       par_str = 'even'
@@ -214,7 +233,7 @@ if __name__ == '__main__':
     exit(1)
 
   print_success('\nConnected to '+ serial_path)
-  print_info('\nConfigurations: '+str(baud)+' '+par_str+' parity\n\n')
+  print_info('\nConfigurations: '+str(baud)+' '+str(data_size)+' bits with '+par_str+' parity and '+str(stop_size)+' stop bit(s)\n\n')
 
   #Software Configurations
   char = True
@@ -224,13 +243,14 @@ if __name__ == '__main__':
   safe_tx = False
   prefix=None
   suffix=None
-  cin = ''
-  uart_conn = Serial(serial_path,baud,parity=par)
+  
+  uart_conn = Serial(serial_path,baud,data_size,par,stop_size)
   
   #Set up listener daemon
   listener_daemon = threading.Thread(target=uart_listener,daemon=True)
   listener_daemon.start()
   listener_alive = True
+  cin = ''
   
   while True: #main loop for send
     try:
