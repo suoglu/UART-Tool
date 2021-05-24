@@ -32,29 +32,38 @@ def write(promt):
 
 #Threaded functions
 def uart_transmit():
-  incoming = input()
-  
+  incoming = ''.casefold() 
+  while True: #main loop for send
+    incoming = input()
+    if incoming.startswith('\quit') or incoming.startswith('\exit'):
+      break
 
-def uart_receive():
+  print_info('\nExiting...')
+
+
+def uart_receive(): #TODO: keep the prompt already written in terminal when new received
   write(get_now() + ' Listening...\n')
   timer_stamp = 0
   last_line = ''
-  while True:
+  byte_counter = 0
+  while True: #main loop for receive
     buff = ''
     if char:
       buff = uart_conn.read().decode()
     else:
-      buff = hex(int.from_bytes(uart_conn.read()))
-      buff = ' ' + buff
+      buff = hex(int.from_bytes(uart_conn.read(),byteorder='little'))
+      buff+= ' '
     current_time_stamp = get_time_stamp()
-    if timer_stamp < current_time_stamp:
+    if (timer_stamp < current_time_stamp) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
+      byte_counter = 0
       last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
     else:
-      write('\033[F')
-    last_line+=str(buff)
+      write('\033[F\r')
+      byte_counter+=1
+    last_line+=buff
     write(last_line+'\n')
     sys.stdout.flush()
-    timer_stamp = get_time_stamp() + 50000
+    timer_stamp = get_time_stamp() + 70000
 
 #Main function
 if __name__ == '__main__':
