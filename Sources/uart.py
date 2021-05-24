@@ -24,14 +24,18 @@ from serial import Serial
 def get_now():
   return  '\033[35m' + str(datetime.datetime.now()) + ':\033[0m'
 
+
 def print_error(promt):
   sys.stdout.write('\033[31m'+promt+'\033[0m')
+
 
 def print_success(promt):
   sys.stdout.write('\033[32m'+promt+'\033[0m')
 
+
 def print_info(promt):
   sys.stdout.write('\033[2m'+promt+'\033[0m')
+
 
 def print_warn(promt):
   sys.stdout.write('\033[91m'+promt+'\033[0m')
@@ -41,15 +45,19 @@ def print_warn(promt):
 def get_time_stamp():
   return time.clock_gettime_ns(time.CLOCK_THREAD_CPUTIME_ID)
 
+
 def write(promt):
   sys.stdout.write(promt)
+
 
 def serial_read():
   readData = uart_conn.read()
   return readData
 
+
 def serial_write(sendData):
   uart_conn.write(sendData)
+
 
 def print_commands():
   write(' ~ \\binhex : print received bytes as binary number\n')
@@ -69,6 +77,7 @@ def print_commands():
   write(' ~ \\unsafe : in non char mode, do not stop sending if non number given\n')
   write('\nTo send a \'\\\' as a first byte use \'\\\\\'\n')
 
+
 #listener daemon
 def uart_listener(): #TODO: keep the prompt already written in terminal when new received
   write(get_now())
@@ -76,8 +85,10 @@ def uart_listener(): #TODO: keep the prompt already written in terminal when new
   timer_stamp = 0
   last_line = ''
   byte_counter = 0
+
   while True: #main loop for listener
     buff = serial_read()
+
     if char:
       buff = buff.decode()
     else:
@@ -91,16 +102,19 @@ def uart_listener(): #TODO: keep the prompt already written in terminal when new
       if hex_add:
         buff+=(' ('+hex(val)+')')
       buff+= ' '
+
     if (timer_stamp < get_time_stamp()) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
       byte_counter = 0
       last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
     else:
       write('\033[F\r')
       byte_counter+=1
+
     last_line+=buff
     write(last_line+'\n')
     sys.stdout.flush()
     timer_stamp = get_time_stamp() + 70000
+
 
 #Main function
 if __name__ == '__main__':
@@ -109,6 +123,7 @@ if __name__ == '__main__':
   par = serial.PARITY_NONE
   par_str = 'no'
   search_range = 10
+
   #check arguments for custom settings
   while len(sys.argv) > 1:
     current = sys.argv.pop(-1)  
@@ -188,6 +203,7 @@ if __name__ == '__main__':
 
   print_success('\nConnected to '+ serial_path)
   print_info('\nConfigurations: '+str(baud)+' '+par_str+' parity\n\n')
+
   #Software Configurations
   char = True
   dec_ow = False
@@ -196,16 +212,17 @@ if __name__ == '__main__':
   safe_tx = False
   prefix=None
   suffix=None
+  cin = ''
   uart_conn = Serial(serial_path,baud,parity=par)
   
   #Set up listener daemon
   thread_rx = threading.Thread(target=uart_listener,daemon=True)
   thread_rx.start()
   
-  cin = ''
   while True: #main loop for send
-    cin = input()
-    write('\033[F'+get_now()+' ')
+    cin = input() #Wait for input 
+    write('\033[F'+get_now()+' ') #print timestamp
+    #command handling
     if cin == '\quit' or cin =='\exit' or cin =='\q':
       break
     elif cin == '\help':
@@ -315,12 +332,15 @@ if __name__ == '__main__':
       else:
         print_warn('Command \033[0m' + cin + '\033[91m does not exist!\n')
         continue
+    #Data handling
     error_str = ''
     send_str = ''
     toSend = 0
+
     if prefix != None:
       for byte in prefix:
         serial_write(byte)
+
     if not char:
       for item in cin.split(' '):
         try:
@@ -345,9 +365,11 @@ if __name__ == '__main__':
       cin = send_str
     else:
       serial_write(cin.encode())
+
     if suffix != None:
       for byte in suffix:
         serial_write(byte)
+        
     cin+='\n'
     write('\033[33mSend:\033[0m '+cin)
     print_error(error_str)
