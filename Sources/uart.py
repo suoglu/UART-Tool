@@ -61,9 +61,11 @@ def print_commands():
   write(' ~ \\exit   : exits the script\n')
   write(' ~ \\h      : print received bytes as hexadecimal number\n')
   write(' ~ \\hex    : print received bytes as hexadecimal number\n')
+  write(' ~ \\pref   : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
   write(' ~ \\q      : exits the script\n')
   write(' ~ \\quit   : exits the script\n')
   write(' ~ \\safe   : in non char mode, stop sending if non number given\n')
+  write(' ~ \\suff   : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
   write(' ~ \\unsafe : in non char mode, do not stop sending if non number given\n')
   write('\nTo send a \'\\\' as a first byte use \'\\\\\'\n')
 
@@ -192,6 +194,8 @@ if __name__ == '__main__':
   bin_ow = False
   hex_add = False
   safe_tx = False
+  prefix=None
+  suffix=None
   uart_conn = Serial(serial_path,baud,parity=par)
   
   #Set up listener daemon
@@ -259,6 +263,52 @@ if __name__ == '__main__':
       print_info('Safe transmit mode disabled\n')
       safe_tx = False
       continue
+    elif cin.startswith('\\pref'):
+      cin = cin[5:]
+      try:
+        cin = cin.split(' ')
+        hold_bytes = []
+        if len(cin) == cin.count(''):
+          prefix=None
+          print_info('Prefix removed\n')
+        else:
+          for item in cin:
+            if item != '':
+              byte_val = int(item,16)
+              hold_bytes.append(byte_val.to_bytes(1,'little'))
+          print_info('Prefix updated to ')
+          for item in cin:
+            if item != '':
+              print_info(item+' ')
+          prefix=hold_bytes
+          write('\n')
+      except:
+        print_error('Arguments must be hexadecimal!\n')
+      finally:
+        continue
+    elif cin.startswith('\\suff'):
+      cin = cin[5:]
+      try:
+        cin = cin.split(' ')
+        hold_bytes = []
+        if len(cin) == cin.count(''):
+          suffix=None
+          print_info('Suffix removed\n')
+        else:
+          for item in cin:
+            if item != '':
+              byte_val = int(item,16)
+              hold_bytes.append(byte_val.to_bytes(1,'little'))
+          print_info('Suffix updated to ')
+          for item in cin:
+            if item != '':
+              print_info(item+' ')
+          suffix=hold_bytes
+          write('\n')
+      except:
+        print_error('Arguments must be hexadecimal!\n')
+      finally:
+        continue
     elif cin.startswith('\\'):
       if cin.startswith('\\\\'):
         cin = cin[1:]
@@ -268,6 +318,9 @@ if __name__ == '__main__':
     error_str = ''
     send_str = ''
     toSend = 0
+    if prefix != None:
+      for byte in prefix:
+        serial_write(byte)
     if not char:
       for item in cin.split(' '):
         try:
@@ -292,6 +345,9 @@ if __name__ == '__main__':
       cin = send_str
     else:
       serial_write(cin.encode())
+    if suffix != None:
+      for byte in suffix:
+        serial_write(byte)
     cin+='\n'
     write('\033[33mSend:\033[0m '+cin)
     print_error(error_str)
