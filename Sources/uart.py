@@ -15,9 +15,12 @@ import serial
 import threading
 import time
 import datetime
+import signal
+
 
 from serial import Serial
 
+global listener_alive
 
 #Prompt coloring 
 def get_now():
@@ -49,13 +52,14 @@ def write(promt):
   sys.stdout.write(promt)
 
 
-def serial_read():
-  readData = uart_conn.read()
-  return readData
-
-
 def serial_write(sendData):
-  uart_conn.write(sendData)
+  try:
+    uart_conn.write(sendData)
+  except:
+    return None
+
+def check_listener(signum, frame):
+  raise TimeoutError
 
 
 def print_commands():
@@ -84,35 +88,45 @@ def uart_listener(): #TODO: keep the prompt already written in terminal when new
   timer_stamp = 0
   last_line = ''
   byte_counter = 0
+  global listener_alive
 
   while True: #main loop for listener
-    buff = serial_read()
+    try:
+      buff = uart_conn.read()
 
-    if char:
-      buff = buff.decode()
-    else:
-      val = int.from_bytes(buff,byteorder='little')
-      if dec_ow:
-        buff = str(val)
-      elif bin_ow:
-        buff = bin(val)
+      if char:
+        buff = buff.decode()
       else:
-        buff = hex(val)
-      if hex_add:
-        buff+=(' ('+hex(val)+')')
-      buff+= ' '
+        val = int.from_bytes(buff,byteorder='little')
+        if dec_ow:
+          buff = str(val)
+        elif bin_ow:
+          buff = bin(val)
+        else:
+          buff = hex(val)
+        if hex_add:
+          buff+=(' ('+hex(val)+')')
+        buff+= ' '
 
-    if (timer_stamp < get_time_stamp()) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
-      byte_counter = 0
-      last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
-    else:
-      write('\033[F\r')
-      byte_counter+=1
+      if (timer_stamp < get_time_stamp()) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
+        byte_counter = 0
+        last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
+      else:
+        write('\033[F\r')
+        byte_counter+=1
 
-    last_line+=buff
-    write(last_line+'\n')
-    sys.stdout.flush()
-    timer_stamp = get_time_stamp() + 70000
+      last_line+=buff
+      write(last_line+'\n')
+      sys.stdout.flush()
+      timer_stamp = get_time_stamp() + 70000
+    except serial.SerialException:
+      print_error('Connection to ' + serial_path + ' lost!\nExiting daemon...\n')
+      listener_alive = False
+      break
+    except:
+      print_error('Something unexpected happened!\nExiting daemon...\n')
+      listener_alive = False
+      break
 
 
 #Main function
@@ -122,7 +136,6 @@ if __name__ == '__main__':
   par = serial.PARITY_NONE
   par_str = 'no'
   search_range = 10
-
   #check arguments for custom settings
   while len(sys.argv) > 1:
     current = sys.argv.pop(-1)  
@@ -173,7 +186,7 @@ if __name__ == '__main__':
       except:
         continue
   if serial_path == '/dev/ttyUSB':
-    print_warn('\nCannot find ttyUSB device, searching for ttyACM...')
+    print_warn('\nCannot find a ttyUSB device, searching for a ttyACM device...')
     serial_path = '/dev/ttyACM'
     current = ''
     for i in range(search_range+1):
@@ -185,7 +198,7 @@ if __name__ == '__main__':
       except:
         continue
   if serial_path == '/dev/ttyACM':
-    print_warn('\nCannot find ttyACM device, searching for ttyCOM...')
+    print_warn('\nCannot find a ttyACM device, searching for a ttyCOM device...')
     serial_path = '/dev/ttyCOM'
     current = ''
     for i in range(search_range+1):
@@ -215,163 +228,186 @@ if __name__ == '__main__':
   uart_conn = Serial(serial_path,baud,parity=par)
   
   #Set up listener daemon
-  thread_rx = threading.Thread(target=uart_listener,daemon=True)
-  thread_rx.start()
+  listener_daemon = threading.Thread(target=uart_listener,daemon=True)
+  listener_daemon.start()
+  listener_alive = True
   
   while True: #main loop for send
-    cin = input() #Wait for input 
-    write('\033[F'+get_now()+' ') #print timestamp
-    #command handling
-    if cin == '\quit' or cin =='\exit' or cin =='\q':
-      break
-    elif cin == '\help':
-      print_info('Help\n')
-      write('Available Commands:\n')
-      print_commands()
-      continue
-    elif cin == '\char' or cin == '\c':
-      char = True
-      dec_ow = False
-      bin_ow = False
-      hex_add = False
-      print_info('Received bytes will be printed as character\n')
-      continue
-    elif cin == '\hex' or cin == '\h':
-      print_info('Received bytes will be printed as hexadecimal number\n')
-      char = False
-      dec_ow = False
-      bin_ow = False
-      hex_add = False
-      continue
-    elif cin == '\dec':
-      print_info('Received bytes will be printed as decimal number\n')
-      char = False
-      dec_ow = True
-      bin_ow = False
-      hex_add = False
-      continue
-    elif cin == '\\bin':
-      print_info('Received bytes will be printed as binary number\n')
-      char = False
-      dec_ow = False
-      bin_ow = True
-      hex_add = False
-      continue
-    elif cin == '\dechex':
-      print_info('Received bytes will be printed as decimal number and hexadecimal equivalent\n')
-      char = False
-      dec_ow = True
-      bin_ow = False
-      hex_add = True
-      continue
-    elif cin == '\\binhex':
-      print_info('Received bytes will be printed as binary number and hexadecimal equivalent\n')
-      char = False
-      dec_ow = False
-      bin_ow = True
-      hex_add = True
-      continue
-    elif cin == '\\safe':
-      print_info('Safe transmit mode enabled\n')
-      safe_tx = True
-      continue
-    elif cin == '\\unsafe':
-      print_info('Safe transmit mode disabled\n')
-      safe_tx = False
-      continue
-    elif cin.startswith('\\pref'):
-      cin = cin[5:]
-      try:
-        cin = cin.split(' ')
-        hold_bytes = []
-        if len(cin) == cin.count(''):
-          prefix=None
-          print_info('Prefix removed\n')
-        else:
-          for item in cin:
-            if item != '':
-              byte_val = int(item,16)
-              hold_bytes.append(byte_val.to_bytes(1,'little'))
-          print_info('Prefix updated to ')
-          for item in cin:
-            if item != '':
-              print_info(item+' ')
-          prefix=hold_bytes
-          write('\n')
-      except:
-        print_error('Arguments must be hexadecimal!\n')
-      finally:
+    try:
+      # if not listener_alive:
+       # raise ChildProcessError
+      signal.signal(signal.SIGALRM, check_listener)
+      signal.alarm(1)
+      cin = input() #Wait for input 
+      write('\033[F'+get_now()+' ') #print timestamp
+      #command handling
+      if cin == '\quit' or cin =='\exit' or cin =='\q':
+        break
+      elif cin == '\help':
+        print_info('Help\n')
+        write('Available Commands:\n')
+        print_commands()
         continue
-    elif cin.startswith('\\suff'):
-      cin = cin[5:]
-      try:
-        cin = cin.split(' ')
-        hold_bytes = []
-        if len(cin) == cin.count(''):
-          suffix=None
-          print_info('Suffix removed\n')
-        else:
-          for item in cin:
-            if item != '':
-              byte_val = int(item,16)
-              hold_bytes.append(byte_val.to_bytes(1,'little'))
-          print_info('Suffix updated to ')
-          for item in cin:
-            if item != '':
-              print_info(item+' ')
-          suffix=hold_bytes
-          write('\n')
-      except:
-        print_error('Arguments must be hexadecimal!\n')
-      finally:
+      elif cin == '\char' or cin == '\c':
+        char = True
+        dec_ow = False
+        bin_ow = False
+        hex_add = False
+        print_info('Received bytes will be printed as character\n')
         continue
-    elif cin.startswith('\\'):
-      if cin.startswith('\\\\'):
-        cin = cin[1:]
-      else:
-        print_warn('Command \033[0m' + cin + '\033[91m does not exist!\n')
+      elif cin == '\hex' or cin == '\h':
+        print_info('Received bytes will be printed as hexadecimal number\n')
+        char = False
+        dec_ow = False
+        bin_ow = False
+        hex_add = False
         continue
-    #Data handling
-    error_str = ''
-    send_str = ''
-    toSend = 0
-
-    if prefix != None:
-      for byte in prefix:
-        serial_write(byte)
-
-    if not char:
-      for item in cin.split(' '):
+      elif cin == '\dec':
+        print_info('Received bytes will be printed as decimal number\n')
+        char = False
+        dec_ow = True
+        bin_ow = False
+        hex_add = False
+        continue
+      elif cin == '\\bin':
+        print_info('Received bytes will be printed as binary number\n')
+        char = False
+        dec_ow = False
+        bin_ow = True
+        hex_add = False
+        continue
+      elif cin == '\dechex':
+        print_info('Received bytes will be printed as decimal number and hexadecimal equivalent\n')
+        char = False
+        dec_ow = True
+        bin_ow = False
+        hex_add = True
+        continue
+      elif cin == '\\binhex':
+        print_info('Received bytes will be printed as binary number and hexadecimal equivalent\n')
+        char = False
+        dec_ow = False
+        bin_ow = True
+        hex_add = True
+        continue
+      elif cin == '\\safe':
+        print_info('Safe transmit mode enabled\n')
+        safe_tx = True
+        continue
+      elif cin == '\\unsafe':
+        print_info('Safe transmit mode disabled\n')
+        safe_tx = False
+        continue
+      elif cin.startswith('\\pref'):
+        cin = cin[5:]
         try:
-          if item.startswith('0x'):
-            toSend = int(item, 16)
-          elif item.startswith('0d'):
-            toSend = int(item, 10) 
-          elif item.startswith('0b') or bin_ow:
-            toSend = int(cin, 2)
-          elif dec_ow:
-            toSend = int(item, 10) 
+          cin = cin.split(' ')
+          hold_bytes = []
+          if len(cin) == cin.count(''):
+            prefix=None
+            print_info('Prefix removed\n')
           else:
-            toSend = int(item)
+            for item in cin:
+              if item != '':
+                byte_val = int(item,16)
+                hold_bytes.append(byte_val.to_bytes(1,'little'))
+            print_info('Prefix updated to ')
+            for item in cin:
+              if item != '':
+                print_info(item+' ')
+            prefix=hold_bytes
+            write('\n')
         except:
-          error_str+=(item + ' is not a valid number!\n')
-          if safe_tx:
-            break
+          print_error('Arguments must be hexadecimal!\n')
+        finally:
+          continue
+      elif cin.startswith('\\suff'):
+        cin = cin[5:]
+        try:
+          cin = cin.split(' ')
+          hold_bytes = []
+          if len(cin) == cin.count(''):
+            suffix=None
+            print_info('Suffix removed\n')
           else:
-            continue
-        send_str+=(item + ' ')
-        serial_write(toSend.to_bytes(1,'little'))
-      cin = send_str
-    else:
-      serial_write(cin.encode())
+            for item in cin:
+              if item != '':
+                byte_val = int(item,16)
+                hold_bytes.append(byte_val.to_bytes(1,'little'))
+            print_info('Suffix updated to ')
+            for item in cin:
+              if item != '':
+                print_info(item+' ')
+            suffix=hold_bytes
+            write('\n')
+        except:
+          print_error('Arguments must be hexadecimal!\n')
+        finally:
+          continue
+      elif cin.startswith('\\'):
+        if cin.startswith('\\\\'):
+          cin = cin[1:]
+        else:
+          print_warn('Command \033[0m' + cin + '\033[91m does not exist!\n')
+          continue
+      #Data handling
+      error_str = ''
+      send_str = ''
+      toSend = 0
 
-    if suffix != None:
-      for byte in suffix:
-        serial_write(byte)
+      if prefix != None:
+        for byte in prefix:
+          serial_write(byte)
 
-    cin+='\n'
-    write('\033[33mSend:\033[0m '+cin)
-    print_error(error_str)
-  print_info('Exiting...\n')
+      if not char:
+        for item in cin.split(' '):
+          try:
+            if item.startswith('0x'):
+              toSend = int(item, 16)
+            elif item.startswith('0d'):
+              toSend = int(item, 10) 
+            elif item.startswith('0b') or bin_ow:
+              toSend = int(cin, 2)
+            elif dec_ow:
+              toSend = int(item, 10) 
+            else:
+              toSend = int(item)
+          except:
+            error_str+=(item + ' is not a valid number!\n')
+            if safe_tx:
+              break
+            else:
+              continue
+          send_str+=(item + ' ')
+          serial_write(toSend.to_bytes(1,'little'))
+        cin = send_str
+      else:
+        serial_write(cin.encode())
 
+      if suffix != None:
+        for byte in suffix:
+          serial_write(byte)
+
+      cin+='\n'
+      write('\033[33mSend:\033[0m '+cin)
+      print_error(error_str)
+    
+    except serial.SerialException:
+      print_error('Connection to ' + serial_path + ' lost!\nExiting...\n')
+      quit(2)
+    except KeyboardInterrupt:
+      print_warn('\nUser Interrupt\n')
+      break
+    except TimeoutError:
+      if listener_alive:
+        continue
+      else:
+        print_warn('Daemon is killed!\n')
+        print_info('Exiting...\n')
+        quit(2)
+    except Exception as e: 
+      print_error(str(e)+'\nExiting...\n')
+      break
+
+  print_info('Disconnecting...\n')
   uart_conn.close()
