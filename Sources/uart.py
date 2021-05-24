@@ -15,34 +15,44 @@ def get_time_stamp():
 def get_now():
   return  '\033[35m' + str(datetime.datetime.now()) + ':\033[0m'
 
-def print_error(msg):
-  print('\033[31m',msg,'\033[0m',sep='')
+def print_error(promt):
+  sys.stdout.write('\033[31m'+promt+'\033[0m')
 
-def print_success(msg):
-  print('\033[32m',msg,'\033[0m',sep='')
+def print_success(promt):
+  sys.stdout.write('\033[32m'+promt+'\033[0m')
 
-def print_info(msg):
-  print('\033[2m',msg,'\033[0m',sep='')
+def print_info(promt):
+  sys.stdout.write('\033[2m'+promt+'\033[0m')
 
-def print_warn(msg):
-  print('\033[33m',msg,'\033[0m',sep='')
+def print_warn(promt):
+  sys.stdout.write('\033[33m'+promt+'\033[0m')
 
 def write(promt):
   sys.stdout.write(promt)
 
 #Threaded functions
 def uart_transmit():
-  incoming = ''.casefold() 
+  incoming = ''
   while True: #main loop for send
     incoming = input()
+    write('\033[F'+get_now()+' ')
     if incoming.startswith('\quit') or incoming.startswith('\exit'):
       break
+    elif incoming.startswith('\char'):
+      print_info('Received bytes will be printed as character\n')
+      char = True
+      continue
+    elif incoming.startswith('\hex'):
+      print_info('Received bytes will be printed as hexadecimal number\n')
+      char = False
+      continue
 
-  print_info('\nExiting...')
+  print_info('Exiting...\n')
 
 
 def uart_receive(): #TODO: keep the prompt already written in terminal when new received
-  write(get_now() + ' Listening...\n')
+  write(get_now())
+  print_info(' Listening...\n')
   timer_stamp = 0
   last_line = ''
   byte_counter = 0
@@ -152,7 +162,7 @@ if __name__ == '__main__':
     exit(1)
 
   print_success('\nConnected to '+ serial_path)
-  print_info('Configurations: '+str(baud)+' '+par_str+' parity\n')
+  print_info('\nConfigurations: '+str(baud)+' '+par_str+' parity\n\n')
   uart_conn = Serial(serial_path,baud,parity=par)
 
   #Set up and run threads
