@@ -11,7 +11,7 @@ from serial import Serial
 def get_time_stamp():
   return time.clock_gettime_ns(time.CLOCK_THREAD_CPUTIME_ID)
 
-#Some formatting 
+#Some text coloring 
 def get_now():
   return  '\033[35m' + str(datetime.datetime.now()) + ':\033[0m'
 
@@ -30,7 +30,7 @@ def print_warn(msg):
 def write(promt):
   sys.stdout.write(promt)
 
-
+#Threaded functions
 def uart_transmit():
   incoming = input()
   
@@ -49,12 +49,14 @@ def uart_receive():
     current_time_stamp = get_time_stamp()
     if timer_stamp < current_time_stamp:
       last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
+    else:
+      write('\033[F')
     last_line+=str(buff)
     write(last_line+'\n')
     sys.stdout.flush()
     timer_stamp = get_time_stamp() + 50000
 
-
+#Main function
 if __name__ == '__main__':
   baud = 115200
   serial_path = '/dev/ttyUSB'
@@ -63,7 +65,7 @@ if __name__ == '__main__':
   search_range = 10
   global char
   char = True
-  #check for arguments
+  #check arguments for custom settings
   while len(sys.argv) > 1:
     current = sys.argv.pop(-1)  
     if current.isnumeric():
@@ -72,18 +74,20 @@ if __name__ == '__main__':
         search_range = current
       else:
         baud = current
-    elif current == 'even':
+    elif current == 'even' or current.casefold() == 'e':
       par = serial.PARITY_EVEN
-      par_str = current
-    elif current == 'odd':
+      par_str = 'even'
+    elif current == 'odd' or current.casefold() == 'o':
       par = serial.PARITY_ODD
-      par_str = current
-    elif current == 'mark':
+      par_str = 'odd'
+    elif current == 'mark' or current.casefold() == 'm':
       par = serial.PARITY_MARK
-      par_str = current
-    elif current == 'space':
+      par_str = 'mark'
+    elif current == 'space' or current.casefold() == 's':
       par = serial.PARITY_SPACE
-      par_str = current
+      par_str = 'space'
+    elif current == 'no' or current.casefold() == 'n':
+      continue
     elif current.endswith('help') :
       print('Usage: uart.py [options]')
       print_info('Options can be baud rate and/or serial path, order doesn\'t matter')
@@ -99,7 +103,8 @@ if __name__ == '__main__':
     else:
       print_warn('\nUnvalid argument:'+current)
       print_info('Skipping...')
-  if serial_path == '/dev/ttyUSB':
+
+  if serial_path == '/dev/ttyUSB': #if no device is given, poll for it
     current = ''
     for i in range(search_range+1):
       current = serial_path + str(i)
@@ -141,11 +146,13 @@ if __name__ == '__main__':
   print_info('Configurations: '+str(baud)+' '+par_str+' parity\n')
   uart_conn = Serial(serial_path,baud,parity=par)
 
+  #Set up and run threads
   thread_tx = threading.Thread(target=uart_transmit)
   thread_rx = threading.Thread(target=uart_receive)
   thread_rx.setDaemon(True)
 
   thread_rx.start()
   thread_tx.start()
+
   thread_tx.join()
   uart_conn.close()
