@@ -11,8 +11,21 @@ from serial import Serial
 def get_time_stamp():
   return time.clock_gettime_ns(time.CLOCK_THREAD_CPUTIME_ID)
 
+#Some formatting 
 def get_now():
-  return str(datetime.datetime.now())
+  return  '\033[35m' + str(datetime.datetime.now()) + ':\033[0m'
+
+def print_error(msg):
+  print('\033[31m',msg,'\033[0m',sep='')
+
+def print_success(msg):
+  print('\033[32m',msg,'\033[0m',sep='')
+
+def print_info(msg):
+  print('\033[2m',msg,'\033[0m',sep='')
+
+def print_warn(msg):
+  print('\033[33m',msg,'\033[0m',sep='')
 
 def write(promt):
   sys.stdout.write(promt)
@@ -23,7 +36,7 @@ def uart_transmit():
   
 
 def uart_receive():
-  write(get_now() + ': Listening...\n')
+  write(get_now() + ' Listening...\n')
   timer_stamp = 0
   last_line = ''
   while True:
@@ -35,7 +48,7 @@ def uart_receive():
       buff = ' ' + buff
     current_time_stamp = get_time_stamp()
     if timer_stamp < current_time_stamp:
-      last_line = '\033[F' + '\n'+ get_now() + ': Got: '
+      last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
     last_line+=str(buff)
     write(last_line+'\n')
     sys.stdout.flush()
@@ -73,19 +86,19 @@ if __name__ == '__main__':
       par_str = current
     elif current.endswith('help') :
       print('Usage: uart.py [options]')
-      print('Options can be baud rate and/or serial path, order doesn\'t matter')
+      print_info('Options can be baud rate and/or serial path, order doesn\'t matter')
     elif current.startswith('tty'):
       serial_path = '/dev/' + current
       try:
         uart_conn = Serial(serial_path,baud,timeout=1)
         uart_conn.close()
-        print('\nConnected to', serial_path)
       except:
-        print('\nCannot open', serial_path)
-        print('\nExiting...')
+        print_error('\nCannot open ' + serial_path)
+        print_info('\nExiting...')
         exit(1)
     else:
-      print('\nUnvalid argument:', current,'\nSkipping...')
+      print_warn('\nUnvalid argument:'+current)
+      print_info('Skipping...')
   if serial_path == '/dev/ttyUSB':
     current = ''
     for i in range(search_range+1):
@@ -94,11 +107,10 @@ if __name__ == '__main__':
         uart_conn = Serial(current,baud,timeout=1)
         uart_conn.close()
         serial_path = current
-        print('\nConnected to', serial_path)
       except:
         continue
   if serial_path == '/dev/ttyUSB':
-    print('\nCannot find ttyUSB device, searching for ttyACM...')
+    print_warn('\nCannot find ttyUSB device, searching for ttyACM...')
     serial_path = '/dev/ttyACM'
     current = ''
     for i in range(search_range+1):
@@ -107,11 +119,10 @@ if __name__ == '__main__':
         uart_conn = Serial(current,baud,timeout=1)
         uart_conn.close()
         serial_path = current
-        print('\nConnected to', serial_path)
       except:
         continue
   if serial_path == '/dev/ttyACM':
-    print('\nCannot find ttyACM device, searching for ttyCOM...')
+    print_warn('\nCannot find ttyACM device, searching for ttyCOM...')
     serial_path = '/dev/ttyCOM'
     current = ''
     for i in range(search_range+1):
@@ -120,14 +131,14 @@ if __name__ == '__main__':
         uart_conn = Serial(current,baud,timeout=1)
         uart_conn.close()
         serial_path = current
-        print('\nConnected to', serial_path)
       except:
         continue
   if serial_path == '/dev/ttyCOM':
-    print('\nCannot find ttyCOM device, exiting...')
+    print_error('\nCannot find any devices, exiting...')
     exit(1)
-  
-  print('Configurations:',baud,par_str,'parity\n')
+
+  print_success('\nConnected to '+ serial_path)
+  print_info('Configurations: '+str(baud)+' '+par_str+' parity\n')
   uart_conn = Serial(serial_path,baud,parity=par)
 
   thread_tx = threading.Thread(target=uart_transmit)
