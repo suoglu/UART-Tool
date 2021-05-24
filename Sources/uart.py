@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+#*-------------------------------------------*#
+#  Title       : UART Script v1.0             #                        
+#  File        : uart.py                      #
+#  Author      : Yigit Suoglu                 #
+#  Last Edit   : 24/05/2021                   #
+#*-------------------------------------------*#
+#  Description : Python3 script for serial    #
+#                communication via UART       #
+#*-------------------------------------------*#
+
 import sys
 import serial
 import threading
@@ -34,6 +44,13 @@ def get_time_stamp():
 def write(promt):
   sys.stdout.write(promt)
 
+def serial_read():
+  readData = uart_conn.read()
+  return readData
+
+def serial_write(sendData):
+  uart_conn.write(sendData)
+
 def print_commands():
   write(' ~ \\binhex : print received bytes as binary number\n')
   write(' ~ \\bin    : print received bytes as binary number and hexadecimal equivalent\n')
@@ -58,7 +75,7 @@ def uart_listener(): #TODO: keep the prompt already written in terminal when new
   last_line = ''
   byte_counter = 0
   while True: #main loop for listener
-    buff = uart_conn.read()
+    buff = serial_read()
     if char:
       buff = buff.decode()
     else:
@@ -271,10 +288,10 @@ if __name__ == '__main__':
           else:
             continue
         send_str+=(item + ' ')
-        uart_conn.write(toSend.to_bytes(1,'little'))
+        serial_write(toSend.to_bytes(1,'little'))
       cin = send_str
     else:
-      uart_conn.write(cin.encode())
+      serial_write(cin.encode())
     cin+='\n'
     write('\033[33mSend:\033[0m '+cin)
     print_error(error_str)
