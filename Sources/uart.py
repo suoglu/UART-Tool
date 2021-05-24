@@ -15,7 +15,6 @@ import serial
 import threading
 import time
 import datetime
-import os
 
 from serial import Serial
 
@@ -369,7 +368,7 @@ if __name__ == '__main__':
     if suffix != None:
       for byte in suffix:
         serial_write(byte)
-        
+
     cin+='\n'
     write('\033[33mSend:\033[0m '+cin)
     print_error(error_str)
