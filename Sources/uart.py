@@ -5,13 +5,12 @@ import serial
 import threading
 import time
 import datetime
+import os
 
 from serial import Serial
 
-def get_time_stamp():
-  return time.clock_gettime_ns(time.CLOCK_THREAD_CPUTIME_ID)
 
-#Some text coloring 
+#Prompt coloring 
 def get_now():
   return  '\033[35m' + str(datetime.datetime.now()) + ':\033[0m'
 
@@ -25,46 +24,38 @@ def print_info(promt):
   sys.stdout.write('\033[2m'+promt+'\033[0m')
 
 def print_warn(promt):
-  sys.stdout.write('\033[33m'+promt+'\033[0m')
+  sys.stdout.write('\033[91m'+promt+'\033[0m')
+
+
+#Helper functions
+def get_time_stamp():
+  return time.clock_gettime_ns(time.CLOCK_THREAD_CPUTIME_ID)
 
 def write(promt):
   sys.stdout.write(promt)
 
-#Threaded functions
-def uart_transmit():
-  incoming = ''
-  while True: #main loop for send
-    incoming = input()
-    write('\033[F'+get_now()+' ')
-    if incoming.startswith('\quit') or incoming.startswith('\exit'):
-      break
-    elif incoming.startswith('\char'):
-      print_info('Received bytes will be printed as character\n')
-      char = True
-      continue
-    elif incoming.startswith('\hex'):
-      print_info('Received bytes will be printed as hexadecimal number\n')
-      char = False
-      continue
+def print_commands():
+  write(' ~ \\char: print received bytes as character\n')
+  write(' ~ \\exit: exits the script\n')
+  write(' ~ \\hex : print received bytes as hexadecimal number\n')
+  write(' ~ \\quit: exits the script\n')
+  write('\nTo send a \'\\\' as a first byte use \'\\\\\'\n')
 
-  print_info('Exiting...\n')
-
-
-def uart_receive(): #TODO: keep the prompt already written in terminal when new received
+#listener daemon
+def uart_listener(): #TODO: keep the prompt already written in terminal when new received
   write(get_now())
   print_info(' Listening...\n')
   timer_stamp = 0
   last_line = ''
   byte_counter = 0
   while True: #main loop for receive
-    buff = ''
+    buff = uart_conn.read()
     if char:
-      buff = uart_conn.read().decode()
+      buff = buff.decode()
     else:
-      buff = hex(int.from_bytes(uart_conn.read(),byteorder='little'))
+      buff = hex(int.from_bytes(buff,byteorder='little'))
       buff+= ' '
-    current_time_stamp = get_time_stamp()
-    if (timer_stamp < current_time_stamp) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
+    if (timer_stamp < get_time_stamp()) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
       byte_counter = 0
       last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
     else:
@@ -82,8 +73,6 @@ if __name__ == '__main__':
   par = serial.PARITY_NONE
   par_str = 'no'
   search_range = 10
-  global char
-  char = True
   #check arguments for custom settings
   while len(sys.argv) > 1:
     current = sys.argv.pop(-1)  
@@ -117,11 +106,11 @@ if __name__ == '__main__':
         uart_conn.close()
       except:
         print_error('\nCannot open ' + serial_path)
-        print_info('\nExiting...')
+        print_info('\nExiting...\n')
         exit(1)
     else:
       print_warn('\nUnvalid argument:'+current)
-      print_info('Skipping...')
+      print_info('\nSkipping...\n')
 
   if serial_path == '/dev/ttyUSB': #if no device is given, poll for it
     current = ''
@@ -158,20 +147,48 @@ if __name__ == '__main__':
       except:
         continue
   if serial_path == '/dev/ttyCOM':
-    print_error('\nCannot find any devices, exiting...')
+    print_error('\nCannot find any devices, exiting...\n')
     exit(1)
 
   print_success('\nConnected to '+ serial_path)
   print_info('\nConfigurations: '+str(baud)+' '+par_str+' parity\n\n')
+  char = True
   uart_conn = Serial(serial_path,baud,parity=par)
-
-  #Set up and run threads
-  thread_tx = threading.Thread(target=uart_transmit)
-  thread_rx = threading.Thread(target=uart_receive)
-  thread_rx.setDaemon(True)
-
+  
+  #Set up listener daemon
+  thread_rx = threading.Thread(target=uart_listener,daemon=True)
   thread_rx.start()
-  thread_tx.start()
+  
+  incoming = ''
+  while True: #main loop for send
+    incoming = input()
+    write('\033[F'+get_now()+' ')
+    if incoming.startswith('\quit') or incoming.startswith('\exit'):
+      break
+    elif incoming.startswith('\help'):
+      print_info('Help\n')
+      write('Available Commands:\n')
+      print_commands()
+      continue
+    elif incoming.startswith('\char'):
+      #update_config(config_file_decoding,1)
+      char = True
+      print_info('Received bytes will be printed as character\n')
+      continue
+    elif incoming.startswith('\hex'):
+      # update_config(config_file_decoding,0)
+      print_info('Received bytes will be printed as hexadecimal number\n')
+      char = False
+      continue
+    elif incoming.startswith('\\'):
+      if incoming.startswith('\\\\'):
+        incoming = incoming[1:]
+      else:
+        print_warn('Command \033[0m' + incoming + '\033[91m does not exist!\n')
+        continue
+    
+    incoming+='\n'
+    write('\033[33mSend:\033[0m '+incoming)
+  print_info('Exiting...\n')
 
-  thread_tx.join()
   uart_conn.close()
