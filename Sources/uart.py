@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 #*-------------------------------------------*#
-#  Title       : UART Script v1.0             #                        
+#  Title       : UART Script v1.1             #                        
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
-#  Last Edit   : 24/05/2021                   #
+#  Last Edit   : 25/05/2021                   #
 #*-------------------------------------------*#
 #  Description : Python3 script for serial    #
 #                communication via UART       #
@@ -65,6 +65,11 @@ def check_listener(signum, frame):
   raise TimeoutError
 
 
+def input_timeout(signum, frame):
+  print_warn('Timeout!\n')
+  raise TimeoutError
+
+
 def print_help():
   print_raw('  Usage:\n')
   print_raw('   Enter a command or data to send. Commands start with \'\\\'. To send a \'\\\' as a first byte use \'\\\\\'\n')
@@ -88,7 +93,7 @@ def print_help():
   print_raw('   ~ \\q       : exits the script\n')
   print_raw('   ~ \\quit    : exits the script\n')
   print_raw('   ~ \\safe    : in non char mode, stop sending if non number given\n')
-  print_raw('   ~ \\send    : send the files in argument\n') #TODO
+  print_raw('   ~ \\send    : send files\n')
   print_raw('   ~ \\setpath : set directory for file operations, full or relative path, empty for cwd\n')
   print_raw('   ~ \\suff    : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
   print_raw('   ~ \\unmute  : print received received to terminal\n')
@@ -285,6 +290,8 @@ if __name__ == '__main__':
       signal.signal(signal.SIGALRM, check_listener)
       signal.alarm(1)
       cin = input() #Wait for input 
+      if cin.strip() == '':
+        continue
       print_raw('\033[F'+get_now()+' ') #print timestamp
       #command handling
       if cin == '\quit' or cin =='\exit' or cin =='\q':
@@ -399,7 +406,40 @@ if __name__ == '__main__':
         finally:
           continue
       elif cin.startswith('\\send'): #TODO
-        print_error('Not Implemented!\n')
+        sendByte = 0
+        sendFile = 0
+        if cin.strip() == '\\send':
+          signal.signal(signal.SIGALRM, input_timeout)
+          signal.alarm(400)
+          files = input('Please provide the name of file(s): ')
+        else:
+          cin = cin[5:]
+          files = cin.strip()
+        files = files.split(' ')
+        for filename in files:
+          if filename != '':
+            file = None
+            try:
+              full_path = cwdir + '/' + filename
+              file = open(full_path,'rb')
+              sendFile+=1
+            except:
+              print_error('Cannot open file \033[0m'+filename+'\033[31m!\n')
+              if safe_tx:
+                print_info('Breaking\n')
+                break
+              else:
+                print_info('Continuing\n')
+                continue
+            byte = file.read(1)
+            while byte != b'':
+              serial_write(byte)
+              sendByte+=1
+              byte = file.read(1)
+        if sendFile == 0:
+          print_warn('Didn\'t write anything\n')
+        else:
+          print_info('Wrote '+str(sendByte)+' bytes from '+str(sendFile)+' file(s)\n')
         continue
       elif cin.startswith('\\setpath'):
         cin = cin.strip()
