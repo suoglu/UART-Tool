@@ -61,11 +61,15 @@ def serial_write(sendData):
     return None
 
 
+def print_input_symbol():
+  sys.stdout.write('\033[32m> \033[0m')
+
+
 def check_listener(signum, frame):
   raise TimeoutError
 
 
-def input_timeout(signum, frame):
+def process_timeout(signum, frame):
   print_warn('Timeout!\n')
   raise TimeoutError
 
@@ -138,6 +142,7 @@ def uart_listener(): #? if possible, TODO: keep the prompt already written in te
 
         last_line+=buff
         print_raw(last_line+'\n')
+        print_input_symbol()
         sys.stdout.flush()
         timer_stamp = get_time_stamp() + 70000
       if dumpfile != None:
@@ -149,7 +154,7 @@ def uart_listener(): #? if possible, TODO: keep the prompt already written in te
         except:
           print_error('Cannot dump to file \033[0m' + dumpfile + '\033[31m!\n')
     except serial.SerialException:
-      print_error('Connection to ' + serial_path + ' lost!\n')
+      print_error('\033[F\nConnection to ' + serial_path + ' lost!\n')
       print_info('Exiting daemon...\n')
       listener_alive = False
       break
@@ -296,6 +301,7 @@ if __name__ == '__main__':
   
   listener_alive = True
   cin = ''
+  print_input_symbol()
 
   while True: #main loop for send
     try:
@@ -303,7 +309,9 @@ if __name__ == '__main__':
        # raise ChildProcessError
       signal.signal(signal.SIGALRM, check_listener)
       signal.alarm(1)
-      cin = input() #Wait for input 
+      cin = input() #Wait for input
+      signal.signal(signal.SIGALRM, process_timeout)
+      signal.alarm(1800) #Half an hour
       cin = cin.strip()
       if cin == '':
         continue
@@ -315,11 +323,13 @@ if __name__ == '__main__':
       elif cin == '\help':
         print_info('Help\n')
         print_help()
+        print_input_symbol()
         continue
       elif cin == '\license':
         print_info('License\n')
         print_raw('EUPL-1.2\n')
         print_raw('Full text: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12\n')
+        print_input_symbol()
         continue
       elif cin == '\char' or cin == '\c':
         char = True
@@ -327,6 +337,7 @@ if __name__ == '__main__':
         bin_ow = False
         hex_add = False
         print_info('Received bytes will be printed as character\n')
+        print_input_symbol()
         continue
       elif cin == '\hex' or cin == '\h':
         print_info('Received bytes will be printed as hexadecimal number\n')
@@ -334,6 +345,7 @@ if __name__ == '__main__':
         dec_ow = False
         bin_ow = False
         hex_add = False
+        print_input_symbol()
         continue
       elif cin == '\dec':
         print_info('Received bytes will be printed as decimal number\n')
@@ -341,6 +353,7 @@ if __name__ == '__main__':
         dec_ow = True
         bin_ow = False
         hex_add = False
+        print_input_symbol()
         continue
       elif cin == '\\bin':
         print_info('Received bytes will be printed as binary number\n')
@@ -348,6 +361,7 @@ if __name__ == '__main__':
         dec_ow = False
         bin_ow = True
         hex_add = False
+        print_input_symbol()
         continue
       elif cin == '\dechex':
         print_info('Received bytes will be printed as decimal number and hexadecimal equivalent\n')
@@ -355,6 +369,7 @@ if __name__ == '__main__':
         dec_ow = True
         bin_ow = False
         hex_add = True
+        print_input_symbol()
         continue
       elif cin == '\\binhex':
         print_info('Received bytes will be printed as binary number and hexadecimal equivalent\n')
@@ -362,30 +377,36 @@ if __name__ == '__main__':
         dec_ow = False
         bin_ow = True
         hex_add = True
+        print_input_symbol()
         continue
       elif cin == '\\safe':
         print_info('Safe transmit mode enabled\n')
         safe_tx = True
+        print_input_symbol()
         continue
       elif cin == '\\unsafe':
         print_info('Safe transmit mode disabled\n')
         safe_tx = False
+        print_input_symbol()
         continue
       elif cin == '\\unmute':
         print_info('Listener unmuted\n')
         listener_mute = False
+        print_input_symbol()
         continue
       elif cin == '\\mute':
         print_info('Listener muted\n')
         listener_mute = True
         if dumpfile == None:
           print_warn('Dumping is disabled, received data will be discarded!\n')
+        print_input_symbol()
         continue
       elif cin == '\\nodump':
         print_info('Dumping disabled\n')
         dumpfile = None
         if listener_mute:
           print_warn('Listener is muted, received data will be discarded!\n')
+        print_input_symbol()
         continue
       elif cin.startswith('\\dump'):
         cin = cin[5:]
@@ -411,6 +432,7 @@ if __name__ == '__main__':
             tmpdump.close()
           except:
             print_error('Cannot find or create file \033[0m'+tmpfile+'\033[31m in current path!\n')
+            print_input_symbol()
             continue
         try:
           tmpdump = open(cwdir + '/' + tmpfile,'r')
@@ -420,14 +442,13 @@ if __name__ == '__main__':
         except:
           print_error('Cannot open file \033[0m'+tmpfile+'\033[31m!\n')
         finally:
+          print_input_symbol()
           continue
       elif cin.startswith('\\send') or cin.startswith('\\s ') or cin == '\\s':
         sendByte = 0
         sendFile = 0
         if cin.strip() == '\\send' or cin.strip() == '\\s':
-          signal.signal(signal.SIGALRM, input_timeout)
-          signal.alarm(400)
-          files = input('Please provide the name of file(s): ')
+          files = input('Please provide the name of the file(s): ')
         else:
           if cin.strip() == '\\send':
             cin = cin[5:]
@@ -459,11 +480,13 @@ if __name__ == '__main__':
           print_warn('Didn\'t write anything\n')
         else:
           print_info('Wrote '+str(sendByte)+' bytes from '+str(sendFile)+' file(s)\n')
+        print_input_symbol()
         continue
       elif cin == '\\getpath':
         print_info('Current path: \033[0m'+cwdir+'\n')
         if listener_mute:
           print_warn('Listener is muted, received data will be discarded!\n')
+        print_input_symbol()
         continue
       elif cin.startswith('\\setpath'):
         cin = cin.strip()
@@ -493,8 +516,10 @@ if __name__ == '__main__':
           else:
             print_raw(tmpdir)
             print_error(' is not a valid directory path!\n')
+            print_input_symbol()
             continue
         print_info('Working directory set to \033[0m'+cwdir+'\n')
+        print_input_symbol()
         continue
       elif cin.startswith('\\pref'):
         cin = cin[5:]
@@ -518,6 +543,7 @@ if __name__ == '__main__':
         except:
           print_error('Arguments must be hexadecimal!\n')
         finally:
+          print_input_symbol()
           continue
       elif cin.startswith('\\suff'):
         cin = cin[5:]
@@ -541,6 +567,7 @@ if __name__ == '__main__':
         except:
           print_error('Arguments must be hexadecimal!\n')
         finally:
+          print_input_symbol()
           continue
       elif cin.startswith('\\'):
         if cin.startswith('\\\\'):
@@ -548,6 +575,7 @@ if __name__ == '__main__':
         else:
           print_warn('Command \033[0m' + cin + '\033[91m does not exist!\n')
           print_info('Use \033[0m\\help\033[2m to see the list of available commands\n')
+          print_input_symbol()
           continue
       #Data handling
       error_str = ''
@@ -592,6 +620,7 @@ if __name__ == '__main__':
       cin+='\n'
       print_raw('\033[33mSend:\033[0m '+cin)
       print_error(error_str)
+      print_input_symbol()
     
     except serial.SerialException:
       print_error('Connection to ' + serial_path + ' lost!\nExiting...\n')
