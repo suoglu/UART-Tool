@@ -147,11 +147,13 @@ def uart_listener(): #? if possible, TODO: keep the prompt already written in te
         except:
           print_error('Cannot dump to file \033[0m' + dumpfile + '\033[31m!\n')
     except serial.SerialException:
-      print_error('Connection to ' + serial_path + ' lost!\nExiting daemon...\n')
+      print_error('Connection to ' + serial_path + ' lost!\n')
+      print_info('Exiting daemon...\n')
       listener_alive = False
       break
-    except:
-      print_error('Something unexpected happened!\nExiting daemon...\n')
+    except Exception as e:
+      print_error(str(e) + '\n')
+      print_info('Exiting Daemon...\n')
       listener_alive = False
       break
 
@@ -192,23 +194,23 @@ if __name__ == '__main__':
         stop_size = serial.STOPBITS_ONE
       elif current > 1999:
         baud = int(current)
-    elif current == 'even' or current.casefold() == 'e':
+    elif current.casefold() == 'even' or current.casefold() == 'e':
       par = serial.PARITY_EVEN
       par_str = 'even'
-    elif current == 'odd' or current.casefold() == 'o':
+    elif current.casefold() == 'odd' or current.casefold() == 'o':
       par = serial.PARITY_ODD
       par_str = 'odd'
-    elif current == 'mark' or current.casefold() == 'm':
+    elif current.casefold() == 'mark' or current.casefold() == 'm':
       par = serial.PARITY_MARK
       par_str = 'mark'
-    elif current == 'space' or current.casefold() == 's':
+    elif current.casefold() == 'space' or current.casefold() == 's':
       par = serial.PARITY_SPACE
       par_str = 'space'
-    elif current == 'no' or current.casefold() == 'n':
+    elif current.casefold() == 'no' or current.casefold() == 'n':
       continue
     elif current.endswith('help') :
       print('Usage: uart.py [options]')
-      print_info('Options can be baud rate and/or serial path, order doesn\'t matter')
+      print_info('Options can be the uart configurations, order doesn\'t matter')
     elif current.startswith('tty'):
       serial_path = '/dev/' + current
       try:
@@ -217,7 +219,7 @@ if __name__ == '__main__':
       except:
         print_error('\nCannot open ' + serial_path)
         print_info('\nExiting...\n')
-        exit(1)
+        sys.exit(1)
     else:
       print_warn('\nUnvalid argument:'+current)
       print_info('\nSkipping...\n')
@@ -258,9 +260,10 @@ if __name__ == '__main__':
         continue
   if serial_path == '/dev/ttyCOM':
     print_error('\nCannot find any devices, exiting...\n')
-    exit(1)
-
-  print_success('\nConnected to '+ serial_path)
+    sys.exit(1)
+  else:
+    print_success('\nConnected to '+ serial_path)
+    
   print_info('\nConfigurations: '+str(baud)+' '+str(data_size)+' bits with '+par_str+' parity and '+str(stop_size)+' stop bit(s)\n\n')
 
   #Software Configurations
@@ -275,11 +278,20 @@ if __name__ == '__main__':
   cwdir = os.getcwd()
   dumpfile = None
   
-  uart_conn = Serial(serial_path,baud,data_size,par,stop_size)
+  try:
+    uart_conn = Serial(serial_path,baud,data_size,par,stop_size)
+  except Exception as e:
+    print_error(str(e)+'\n')
+    sys.exit(2)
   
   #Set up listener daemon
-  listener_daemon = threading.Thread(target=uart_listener,daemon=True)
-  listener_daemon.start()
+  try:
+    listener_daemon = threading.Thread(target=uart_listener,daemon=True)
+    listener_daemon.start()
+  except Exception as e:
+    print_error(str(e)+'\n')
+    sys.exit(4)
+  
   listener_alive = True
   cin = ''
 
@@ -405,7 +417,7 @@ if __name__ == '__main__':
           print_error('Cannot open file \033[0m'+tmpfile+'\033[31m!\n')
         finally:
           continue
-      elif cin.startswith('\\send'): #TODO
+      elif cin.startswith('\\send'):
         sendByte = 0
         sendFile = 0
         if cin.strip() == '\\send':
@@ -571,7 +583,7 @@ if __name__ == '__main__':
     
     except serial.SerialException:
       print_error('Connection to ' + serial_path + ' lost!\nExiting...\n')
-      quit(2)
+      sys.exit(2)
     except KeyboardInterrupt:
       print_warn('\nUser Interrupt\n')
       break
@@ -581,9 +593,10 @@ if __name__ == '__main__':
       else:
         print_warn('Daemon is killed!\n')
         print_info('Exiting...\n')
-        quit(2)
+        sys.exit(2)
     except Exception as e: 
-      print_error(str(e)+'\nExiting...\n')
+      print_error(str(e)+'\n')
+      print_info('Exiting...\n')
       break
 
   print_info('Disconnecting...\n')
