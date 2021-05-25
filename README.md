@@ -40,6 +40,7 @@ Tool also provide some helper functionality via arguments. When one of these arg
 
 * Help: Print info about arguments
 * Search: Search for available devices
+* i: interactive start, tool asks for searial configurations
 
 ## Software configurations
 

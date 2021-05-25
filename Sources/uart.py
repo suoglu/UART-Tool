@@ -216,10 +216,113 @@ if __name__ == '__main__':
     elif current.casefold() == 'help':
       print('\033[FUsage: uart.py [arg]                  ')
       print_info(' Arguments can be the uart configurations or one of the following commands:\n\n')
+      print_info('   ~ i      : interactive start up, tool asks for uart configurations\n')
       print_info('   ~ help   : Print this message\n')
       print_info('   ~ search : Search for connected devices\n')
       print_info('\n Uart configurations can be given in any order\n')
       sys.exit(0)
+    elif current.casefold() == 'i':
+      print_info('\nInteractive configuration mode\nLeave empty for default values\n\n')
+      while True: #ask baud rate
+        cin = str(input('Baud rate: '))
+        cin = cin.strip()
+        if cin == '':
+          print_raw('\033[FBaud rate: ')
+          print_info(str(baud)+'\n')
+          break
+        try:
+          cin = int(cin)
+        except:
+          print_warn('Baud rate must be an integer!\n')
+          continue
+        if cin > 1199:
+          baud = cin
+          break
+        else:
+          print_warn('Minimum baud rate should be 1.2k\n')
+      while True: #ask data size
+        cin = str(input('Data size: '))
+        cin = cin.strip()
+        if cin == '':
+          print_raw('\033[FData size: ')
+          print_info(str(data_size)+'\n')
+          break
+        try:
+          cin = int(cin)
+        except:
+          print_warn('Data size must be an integer!\n')
+          continue
+        if cin > 4 and cin < 9:
+          data_size = cin
+          break
+        else:
+          print_warn('Data size should be either 5, 6, 7 or 8\n')
+      while True: #ask parity
+        cin = str(input('Parity: '))
+        cin = cin.strip()
+        if cin == '':
+          print_raw('\033[FParity: ')
+          print_info(par+'\n')
+          break
+        if cin.casefold() == 'odd' or cin.casefold() == 'o':
+          par = serial.PARITY_ODD
+          par_str = 'odd'
+          break
+        elif cin.casefold() == 'even' or cin.casefold() == 'e':
+          par = serial.PARITY_EVEN
+          par_str = 'even'
+          break
+        elif cin.casefold() == 'mark' or cin.casefold() == 'm':
+          par = serial.PARITY_MARK
+          par_str = 'mark'
+          break
+        elif cin.casefold() == 'space' or cin.casefold() == 's':
+          par = serial.PARITY_SPACE
+          par_str = 'space'
+          break
+        elif cin.casefold() == 'none' or cin.casefold() == 'n' or cin.casefold() == 'no':
+          break
+        else:
+          print_warn('Parity should be odd, even, mark, space or none\n')
+      while True: #ask stop bit
+        cin = str(input('Stop bit size: '))
+        cin = cin.strip()
+        if cin == '':
+          print_raw('\033[FStop bit size: ')
+          print_info(str(stop_size)+'\n')
+          break
+        try:
+          cin = float(cin)
+        except:
+          print_warn('Stop bit size must be a float!\n')
+          continue
+        if cin == 1 or cin == 2:
+          stop_size = cin
+          break
+        elif cin == 1.5:
+          stop_size = serial.STOPBITS_ONE_POINT_FIVE
+          break
+        else:
+          print_warn('Stop bit size should be either 1, 1.5 or 2\n')
+      if serial_path == '/dev/ttyUSB':
+        while True: #ask serial path
+          cin = str(input('Device: '))
+          cin = cin.strip()
+          if cin == '':
+            print_raw('\033[FDevice: ')
+            print_info('Search\n')
+            break
+          if not cin.startswith('tty'):
+            print_warn('Device name should start with tty\n')
+            continue
+          try:
+            try_path='/dev/'+cin
+            uart = Serial(try_path,timeout=1)
+            uart.close()
+            serial_path = try_path
+            break
+          except:
+            print_error('Cannot connect to device \033[0m'+cin+'\033[31m!\n')
     elif current.casefold() == 'search':
       print_info('\nSearching for connected devices...\n')
       found_dev = 0
