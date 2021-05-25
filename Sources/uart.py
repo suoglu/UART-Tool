@@ -66,27 +66,28 @@ def check_listener(signum, frame):
 
 
 def print_commands():
-  print_raw(' ~ \\bin    : print received bytes as binary number\n')
-  print_raw(' ~ \\binhex : print received bytes as binary number and hexadecimal equivalent\n')
-  print_raw(' ~ \\c      : print received bytes as character\n')
-  print_raw(' ~ \\char   : print received bytes as character\n')
-  print_raw(' ~ \\dec    : print received bytes as decimal number\n')
-  print_raw(' ~ \\dechex : print received bytes as decimal number and hexadecimal equivalent\n')
-  print_raw(' ~ \\dump   : dump received bytes in dumpfile, if argument given use it as file name\n')
-  print_raw(' ~ \\exit   : exits the script\n')
-  print_raw(' ~ \\h      : print received bytes as hexadecimal number\n')
-  print_raw(' ~ \\hex    : print received bytes as hexadecimal number\n')
-  print_raw(' ~ \\mute   : do not print received received to terminal\n')
-  print_raw(' ~ \\nodump : stop dumping received bytes in dumpfile\n')
-  print_raw(' ~ \\pref   : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
-  print_raw(' ~ \\q      : exits the script\n')
-  print_raw(' ~ \\quit   : exits the script\n')
-  print_raw(' ~ \\safe   : in non char mode, stop sending if non number given\n')
-  print_raw(' ~ \\send   : send the files in argument\n') #TODO
-  print_raw(' ~ \\setdir : set directory for file operations, full or relative path, empty for cwd\n') #TODO
-  print_raw(' ~ \\suff   : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
-  print_raw(' ~ \\unmute : print received received to terminal\n')
-  print_raw(' ~ \\unsafe : in non char mode, do not stop sending if non number given\n')
+  print_raw(' ~ \\bin     : print received bytes as binary number\n')
+  print_raw(' ~ \\binhex  : print received bytes as binary number and hexadecimal equivalent\n')
+  print_raw(' ~ \\c       : print received bytes as character\n')
+  print_raw(' ~ \\char    : print received bytes as character\n')
+  print_raw(' ~ \\dec     : print received bytes as decimal number\n')
+  print_raw(' ~ \\dechex  : print received bytes as decimal number and hexadecimal equivalent\n')
+  print_raw(' ~ \\dump    : dump received bytes in dumpfile, if argument given use it as file name\n')
+  print_raw(' ~ \\exit    : exits the script\n')
+  print_raw(' ~ \\h       : print received bytes as hexadecimal number\n')
+  print_raw(' ~ \\help    : prints this message\n')
+  print_raw(' ~ \\hex     : print received bytes as hexadecimal number\n')
+  print_raw(' ~ \\mute    : do not print received received to terminal\n')
+  print_raw(' ~ \\nodump  : stop dumping received bytes in dumpfile\n')
+  print_raw(' ~ \\pref    : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
+  print_raw(' ~ \\q       : exits the script\n')
+  print_raw(' ~ \\quit    : exits the script\n')
+  print_raw(' ~ \\safe    : in non char mode, stop sending if non number given\n')
+  print_raw(' ~ \\send    : send the files in argument\n') #TODO
+  print_raw(' ~ \\setpath : set directory for file operations, full or relative path, empty for cwd\n') #TODO
+  print_raw(' ~ \\suff    : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
+  print_raw(' ~ \\unmute  : print received received to terminal\n')
+  print_raw(' ~ \\unsafe  : in non char mode, do not stop sending if non number given\n')
   print_raw('\nTo send a \'\\\' as a first byte use \'\\\\\'\n')
 
 
@@ -370,7 +371,7 @@ if __name__ == '__main__':
               elif extra_arg == '':
                 extra_arg = arg
               else:
-                extra_arg+=(', '+extra_arg)
+                extra_arg+=(', '+arg)
           if extra_arg != '':
             print_warn('Ignoring following extra arguments:\033[0m '+extra_arg+'\n')
         if not os.path.isfile(cwdir + '/' + tmpfile):
@@ -392,8 +393,36 @@ if __name__ == '__main__':
       elif cin.startswith('\\send'): #TODO
         print_error('Not Implemented!\n')
         continue
-      elif cin.startswith('\\setdir'): #TODO
-        print_error('Not Implemented!\n')
+      elif cin.startswith('\\setpath'):
+        cin = cin.strip()
+        if cin == '\\setdir':
+          cwdir = os.getcwd()
+        else:
+          cin = cin[8:]
+          cin = cin.split(' ')
+          tmpdir = None
+          extra_arg =''
+          for arg in cin:
+            if arg != '':
+              if tmpdir == None:
+                tmpdir = arg
+              elif extra_arg == '':
+                extra_arg = arg
+              else:
+                extra_arg+=(', '+arg)
+          if extra_arg != '':
+            print_warn('Ignoring following extra arguments:\033[0m '+extra_arg+'\n')
+          if tmpdir.startswith('~/'):
+            tmpdir = str(os.path.expanduser("~")) + tmpdir[1:]
+          elif not tmpdir.startswith('/'):
+            tmpdir = os.getcwd() + '/' + tmpdir
+          if os.path.isdir(tmpdir):
+            cwdir = tmpdir
+          else:
+            print_raw(tmpdir)
+            print_error(' is not a valid directory path!\n')
+            continue
+        print_info('Working directory set to \033[0m'+cwdir+'\n')
         continue
       elif cin.startswith('\\pref'):
         cin = cin[5:]

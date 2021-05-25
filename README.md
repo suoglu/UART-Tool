@@ -44,6 +44,8 @@ Software configurations handle how to interpret data and adds some options. Curr
 * Safe transmit: **Disabled**; relavent sending non-character, if current data is not a numaric value stop sending
 * Prefix: **None**; Bytes to send before data
 * Suffix: **None**; Bytes to send after data
+* Mute: **Disabled**; Do not print received data to terminal
+* Dumping: **Disabled**; Dump received bytes into a file
 
 When in a numaric data mode; data must be entered as a numaric value with respect to current set data type or by specifying its base.
 
@@ -61,15 +63,17 @@ Commands allow user to change software configurations and interract with the scr
 |`dump [filename]`||Dump received bytes into a file, filename can be given as argument|
 |`exit`||Exits the script same as `quit`|
 |`hex`|`h`|Hexadecimal data mode|
+|`help`||Prints information about the script|
 |`mute`||Do not show received data on terminal|
 |`nodump`||Stop dumping received data|
 |`pref [data]`||Add bytes to prefix, data should be given as hexadecimal|
 |`quit`|`q`|Exits the script same as `exit`|
 |`safe`||Enable safe transmit mode|
+|`setpath`||set directory for file operations, full or relative path, empty for cwd |
 |`suff [data]`||Add bytes to suffix, data should be given as hexadecimal|
 |`unmute`||Show received data on terminal|
 |`unsafe`||Disable safe transmit mode|
 
 ## Dependencies
 
-Script [uart.py](Sources/uart.py) uses *sys*, *serial*, *threading*, *time*, *datetime* and *signal* modules. And tested with Python 3.8.6 on Pop!_OS 20.10
+Script [uart.py](Sources/uart.py) uses *sys*, *serial*, *threading*, *time*, *datetime*, *os* and *signal* modules. And tested with Python 3.8.6 on Pop!_OS 20.10
