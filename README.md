@@ -1,4 +1,4 @@
-# UART Script
+# UART Tool
 
 ## Contents of Readme
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #*-------------------------------------------*#
-#  Title       : UART Script v1.1             #                        
+#  Title       : UART Tool v1.1               #                        
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
@@ -167,7 +167,7 @@ def uart_listener(): #? if possible, TODO: keep the prompt already written in te
 
 #Main function
 if __name__ == '__main__':
-  print_info('Welcome to the UART Script!\n')
+  print_info('Welcome to the UART tool v1.1!\n')
   baud = 115200
   serial_path = '/dev/ttyUSB'
   data_size = serial.EIGHTBITS
