@@ -27,7 +27,7 @@ When the [script](Sources/uart.py) run, it polls for a serial device. First it s
 
 ## Arguments
 
-Default configurations for the UART is 8 bit data with no parity and 1 stop bit; and baut rate set to 115.2k. User can change these configurations via arguments when calling the script. User can also specify serial devide name. Device name must start with *tty*. Script automatically detects arguments. Supported arguments (Bold for default values):
+Default configurations for the UART is 8 bit data with no parity and 1 stop bit; and baut rate set to 115.2k. User can change these configurations via arguments when calling the tool. User can also specify a serial device path. Device name must start with *tty*. Tool automatically detects arguments. Supported arguments (Bold for default values):
 
 * Data size: 5, 6, 7, **8**
 * Baud rate: **115.2k**, 1.2k<
@@ -35,6 +35,11 @@ Default configurations for the UART is 8 bit data with no parity and 1 stop bit;
 * Parity: **no**, even, odd, mark, space (first letters also work)
 * Device path: */dev/tty\**, ***/dev/ttyUSB\****, ***/dev/ttyACM\****, ***/dev/ttyCOM\****
 * Poll range: **10**...20
+
+Tool also provide some helper functionality via arguments. When one of these arguments passed, tool exits after its done. When multiple arguments are passed, only argument is processed.
+
+* Help: Print info about arguments
+* Search: Search for available devices
 
 ## Software configurations
 

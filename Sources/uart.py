@@ -75,35 +75,32 @@ def process_timeout(signum, frame):
 
 
 def print_help():
-  print_raw('  Usage:\n')
+  print_raw('  \033[4mUsage\033[0m:\n')
   print_raw('   Enter a command or data to send. Commands start with \'\\\'. To send a \'\\\' as a first byte use \'\\\\\'\n')
   print_raw('\n')
-  print_raw('  Available Commands:\n')
+  print_raw('  \033[4mAvailable Commands\033[0m:\n')
   print_raw('   ~ \\bin     : print received bytes as binary number\n')
   print_raw('   ~ \\binhex  : print received bytes as binary number and hexadecimal equivalent\n')
-  print_raw('   ~ \\c       : print received bytes as character\n')
-  print_raw('   ~ \\char    : print received bytes as character\n')
+  print_raw('   ~ \033[7m\\char\033[0m    : print received bytes as character\n')
   print_raw('   ~ \\dec     : print received bytes as decimal number\n')
   print_raw('   ~ \\dechex  : print received bytes as decimal number and hexadecimal equivalent\n')
   print_raw('   ~ \\dump    : dump received bytes in dumpfile, if argument given use it as file name\n')
   print_raw('   ~ \\exit    : exits the script\n')
   print_raw('   ~ \\getpath : prints working directory\n')
-  print_raw('   ~ \\h       : print received bytes as hexadecimal number\n')
   print_raw('   ~ \\help    : prints this message\n')
-  print_raw('   ~ \\hex     : print received bytes as hexadecimal number\n')
+  print_raw('   ~ \033[7m\\hex\033[0m     : print received bytes as hexadecimal number\n')
   print_raw('   ~ \\license : prints license information\n')
   print_raw('   ~ \\mute    : do not print received received to terminal\n')
   print_raw('   ~ \\nodump  : stop dumping received bytes in dumpfile\n')
   print_raw('   ~ \\pref    : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
-  print_raw('   ~ \\q       : exits the script\n')
-  print_raw('   ~ \\quit    : exits the script\n')
+  print_raw('   ~ \033[7m\\quit\033[0m    : exits the script\n')
   print_raw('   ~ \\safe    : in non char mode, stop sending if non number given\n')
-  print_raw('   ~ \\s       : send files\n')
-  print_raw('   ~ \\send    : send files\n')
+  print_raw('   ~ \033[7m\\send\033[0m    : send files\n')
   print_raw('   ~ \\setpath : set directory for file operations, full or relative path, empty for cwd\n')
   print_raw('   ~ \\suff    : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
   print_raw('   ~ \\unmute  : print received received to terminal\n')
   print_raw('   ~ \\unsafe  : in non char mode, do not stop sending if non number given\n')
+  print_raw('\n  Marked commands can be called with their first letter\n')
 
 
 #listener daemon
@@ -177,7 +174,8 @@ if __name__ == '__main__':
   search_range = 10
   #check arguments for custom settings
   while len(sys.argv) > 1:
-    current = sys.argv.pop(-1)  
+    current = sys.argv.pop(-1)
+    current = current.strip()
     if current.isnumeric() or current == '1.5' or current == '1,5':
       if(current == '1,5'):
         current = 1.5
@@ -215,9 +213,50 @@ if __name__ == '__main__':
       par_str = 'space'
     elif current.casefold() == 'no' or current.casefold() == 'n':
       continue
-    elif current.endswith('help') :
-      print('Usage: uart.py [options]')
-      print_info('Options can be the uart configurations, order doesn\'t matter')
+    elif current.casefold() == 'help':
+      print('\033[FUsage: uart.py [arg]                  ')
+      print_info(' Arguments can be the uart configurations or one of the following commands:\n\n')
+      print_info('   ~ help   : Print this message\n')
+      print_info('   ~ search : Search for connected devices\n')
+      print_info('\n Uart configurations can be given in any order\n')
+      sys.exit(0)
+    elif current.casefold() == 'search':
+      print_info('\nSearching for connected devices...\n')
+      found_dev = 0
+      poll_path = '/dev/ttyUSB'
+      for i in range(search_range+1):
+        current = poll_path + str(i)
+        if os.path.exists(current):
+          try:
+            uart_conn = Serial(current,timeout=1)
+            uart_conn.close()
+            print_success('\nFound ttyUSB'+str(i))
+            found_dev+=1
+          except:
+            print_warn('\nFound ttyUSB'+str(i)+', but not responding')
+      poll_path = '/dev/ttyACM'
+      for i in range(search_range+1):
+        current = poll_path + str(i)
+        if os.path.exists(current):
+          try:
+            uart_conn = Serial(current,timeout=1)
+            uart_conn.close()
+            print_success('\nFound ttyACM'+str(i))
+            found_dev+=1
+          except:
+            print_warn('\nFound ttyACM'+str(i)+', but not responding')
+      poll_path = '/dev/ttyCOM'
+      for i in range(search_range+1):
+        current = poll_path + str(i)
+        if os.path.exists(current):
+          try:
+            uart_conn = Serial(current,timeout=1)
+            uart_conn.close()
+            print_success('\nFound ttyCOM'+str(i)+'\n')
+          except:
+            print_warn('\nFound ttyCOM'+str(i)+', but not responding\n')
+      print_raw('\n') 
+      sys.exit(0)
     elif current.startswith('tty'):
       serial_path = '/dev/' + current
       try:
