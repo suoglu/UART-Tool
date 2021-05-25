@@ -433,3 +433,4 @@ if __name__ == '__main__':
 
   print_info('Disconnecting...\n')
   uart_conn.close()
+  
