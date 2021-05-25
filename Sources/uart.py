@@ -50,7 +50,7 @@ def get_time_stamp():
   return time.clock_gettime_ns(time.CLOCK_THREAD_CPUTIME_ID)
 
 
-def write(promt):
+def print_raw(promt):
   sys.stdout.write(promt)
 
 
@@ -66,33 +66,33 @@ def check_listener(signum, frame):
 
 
 def print_commands():
-  write(' ~ \\bin    : print received bytes as binary number\n')
-  write(' ~ \\binhex : print received bytes as binary number and hexadecimal equivalent\n')
-  write(' ~ \\c      : print received bytes as character\n')
-  write(' ~ \\char   : print received bytes as character\n')
-  write(' ~ \\dec    : print received bytes as decimal number\n')
-  write(' ~ \\dechex : print received bytes as decimal number and hexadecimal equivalent\n')
-  write(' ~ \\dump   : dump received bytes in dumpfile, if argument given use it as file name\n')
-  write(' ~ \\exit   : exits the script\n')
-  write(' ~ \\h      : print received bytes as hexadecimal number\n')
-  write(' ~ \\hex    : print received bytes as hexadecimal number\n')
-  write(' ~ \\mute   : do not print received received to terminal\n')
-  write(' ~ \\nodump : stop dumping received bytes in dumpfile\n')
-  write(' ~ \\pref   : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
-  write(' ~ \\q      : exits the script\n')
-  write(' ~ \\quit   : exits the script\n')
-  write(' ~ \\safe   : in non char mode, stop sending if non number given\n')
-  write(' ~ \\send   : send the files in argument\n') #TODO
-  write(' ~ \\setdir : set directory for file operations, full or relative path, empty for cwd\n') #TODO
-  write(' ~ \\suff   : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
-  write(' ~ \\unmute : print received received to terminal\n')
-  write(' ~ \\unsafe : in non char mode, do not stop sending if non number given\n')
-  write('\nTo send a \'\\\' as a first byte use \'\\\\\'\n')
+  print_raw(' ~ \\bin    : print received bytes as binary number\n')
+  print_raw(' ~ \\binhex : print received bytes as binary number and hexadecimal equivalent\n')
+  print_raw(' ~ \\c      : print received bytes as character\n')
+  print_raw(' ~ \\char   : print received bytes as character\n')
+  print_raw(' ~ \\dec    : print received bytes as decimal number\n')
+  print_raw(' ~ \\dechex : print received bytes as decimal number and hexadecimal equivalent\n')
+  print_raw(' ~ \\dump   : dump received bytes in dumpfile, if argument given use it as file name\n')
+  print_raw(' ~ \\exit   : exits the script\n')
+  print_raw(' ~ \\h      : print received bytes as hexadecimal number\n')
+  print_raw(' ~ \\hex    : print received bytes as hexadecimal number\n')
+  print_raw(' ~ \\mute   : do not print received received to terminal\n')
+  print_raw(' ~ \\nodump : stop dumping received bytes in dumpfile\n')
+  print_raw(' ~ \\pref   : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
+  print_raw(' ~ \\q      : exits the script\n')
+  print_raw(' ~ \\quit   : exits the script\n')
+  print_raw(' ~ \\safe   : in non char mode, stop sending if non number given\n')
+  print_raw(' ~ \\send   : send the files in argument\n') #TODO
+  print_raw(' ~ \\setdir : set directory for file operations, full or relative path, empty for cwd\n') #TODO
+  print_raw(' ~ \\suff   : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
+  print_raw(' ~ \\unmute : print received received to terminal\n')
+  print_raw(' ~ \\unsafe : in non char mode, do not stop sending if non number given\n')
+  print_raw('\nTo send a \'\\\' as a first byte use \'\\\\\'\n')
 
 
 #listener daemon
 def uart_listener(): #? if possible, TODO: keep the prompt already written in terminal when new received
-  write(get_now())
+  print_raw(get_now())
   print_info(' Listening...\n')
   timer_stamp = 0
   last_line = ''
@@ -121,11 +121,11 @@ def uart_listener(): #? if possible, TODO: keep the prompt already written in te
           byte_counter = 0
           last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
         else:
-          write('\033[F\r')
+          print_raw('\033[F\r')
           byte_counter+=1
 
         last_line+=buff
-        write(last_line+'\n')
+        print_raw(last_line+'\n')
         sys.stdout.flush()
         timer_stamp = get_time_stamp() + 70000
       if dumpfile != None:
@@ -280,13 +280,13 @@ if __name__ == '__main__':
       signal.signal(signal.SIGALRM, check_listener)
       signal.alarm(1)
       cin = input() #Wait for input 
-      write('\033[F'+get_now()+' ') #print timestamp
+      print_raw('\033[F'+get_now()+' ') #print timestamp
       #command handling
       if cin == '\quit' or cin =='\exit' or cin =='\q':
         break
       elif cin == '\help':
         print_info('Help\n')
-        write('Available Commands:\n')
+        print_raw('Available Commands:\n')
         print_commands()
         continue
       elif cin == '\char' or cin == '\c':
@@ -413,7 +413,7 @@ if __name__ == '__main__':
               if item != '':
                 print_info(item+' ')
             prefix=hold_bytes
-            write('\n')
+            print_raw('\n')
         except:
           print_error('Arguments must be hexadecimal!\n')
         finally:
@@ -436,7 +436,7 @@ if __name__ == '__main__':
               if item != '':
                 print_info(item+' ')
             suffix=hold_bytes
-            write('\n')
+            print_raw('\n')
         except:
           print_error('Arguments must be hexadecimal!\n')
         finally:
@@ -488,7 +488,7 @@ if __name__ == '__main__':
           serial_write(byte)
 
       cin+='\n'
-      write('\033[33mSend:\033[0m '+cin)
+      print_raw('\033[33mSend:\033[0m '+cin)
       print_error(error_str)
     
     except serial.SerialException:
