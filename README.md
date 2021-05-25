@@ -34,6 +34,7 @@ Default configurations for the UART is 8 bit data with no parity and 1 stop bit;
 * Stop bit size: **1**, 1.5, 2
 * Parity: **no**, even, odd, mark, space (first letters also work)
 * Device path: */dev/tty\**, ***/dev/ttyUSB\****, ***/dev/ttyACM\****, ***/dev/ttyCOM\****
+* Poll range: **10**...20
 
 ## Software configurations
 
