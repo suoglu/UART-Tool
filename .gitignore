@@ -16,6 +16,9 @@
 *tmp*
 WIP*
 
-#Text editor configs
+# Text editor configs
 *.geany
 .vscode
+
+# Repo specific
+*uartrx.bin

@@ -17,6 +17,7 @@ import threading
 import time
 import datetime
 import signal
+import os
 
 
 from serial import Serial
@@ -59,6 +60,7 @@ def serial_write(sendData):
   except:
     return None
 
+
 def check_listener(signum, frame):
   raise TimeoutError
 
@@ -70,20 +72,26 @@ def print_commands():
   write(' ~ \\char   : print received bytes as character\n')
   write(' ~ \\dec    : print received bytes as decimal number\n')
   write(' ~ \\dechex : print received bytes as decimal number and hexadecimal equivalent\n')
+  write(' ~ \\dump   : dump received bytes in dumpfile, if argument given use it as file name\n') #TODO
   write(' ~ \\exit   : exits the script\n')
   write(' ~ \\h      : print received bytes as hexadecimal number\n')
   write(' ~ \\hex    : print received bytes as hexadecimal number\n')
+  write(' ~ \\mute   : do not print received received to terminal\n')
+  write(' ~ \\nodump : stop dumping received bytes in dumpfile\n')
   write(' ~ \\pref   : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
   write(' ~ \\q      : exits the script\n')
   write(' ~ \\quit   : exits the script\n')
   write(' ~ \\safe   : in non char mode, stop sending if non number given\n')
+  write(' ~ \\send   : send the files in argument\n') #TODO
+  write(' ~ \\setdir : set directory for file operations, full or relative path, empty for cwd\n') #TODO
   write(' ~ \\suff   : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
+  write(' ~ \\unmute : print received received to terminal\n')
   write(' ~ \\unsafe : in non char mode, do not stop sending if non number given\n')
   write('\nTo send a \'\\\' as a first byte use \'\\\\\'\n')
 
 
 #listener daemon
-def uart_listener(): #TODO: keep the prompt already written in terminal when new received
+def uart_listener(): #? if possible, TODO: keep the prompt already written in terminal when new received
   write(get_now())
   print_info(' Listening...\n')
   timer_stamp = 0
@@ -93,33 +101,41 @@ def uart_listener(): #TODO: keep the prompt already written in terminal when new
 
   while True: #main loop for listener
     try:
-      buff = uart_conn.read()
-
-      if char:
-        buff = buff.decode()
-      else:
-        val = int.from_bytes(buff,byteorder='little')
-        if dec_ow:
-          buff = str(val)
-        elif bin_ow:
-          buff = bin(val)
+      byte = uart_conn.read()
+      if not listener_mute:
+        if char:
+          buff = byte.decode()
         else:
-          buff = hex(val)
-        if hex_add:
-          buff+=(' ('+hex(val)+')')
-        buff+= ' '
+          val = int.from_bytes(buff,byteorder='little')
+          if dec_ow:
+            buff = str(val)
+          elif bin_ow:
+            buff = bin(val)
+          else:
+            buff = hex(val)
+          if hex_add:
+            buff+=(' ('+hex(val)+')')
+          buff+= ' '
 
-      if (timer_stamp < get_time_stamp()) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
-        byte_counter = 0
-        last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
-      else:
-        write('\033[F\r')
-        byte_counter+=1
+        if (timer_stamp < get_time_stamp()) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
+          byte_counter = 0
+          last_line = '\033[F' + '\n'+ get_now() + ' \033[36mGot:\033[0m '
+        else:
+          write('\033[F\r')
+          byte_counter+=1
 
-      last_line+=buff
-      write(last_line+'\n')
-      sys.stdout.flush()
-      timer_stamp = get_time_stamp() + 70000
+        last_line+=buff
+        write(last_line+'\n')
+        sys.stdout.flush()
+        timer_stamp = get_time_stamp() + 70000
+      if dumpfile != None:
+        try:
+          full_path = cwdir + '/' + dumpfile
+          dump = open(full_path,'ab')
+          dump.write(byte)
+          dump.close()
+        except:
+          print_error('Cannot dump to file \033[0m' + dumpfile + '\033[31m!\n')
     except serial.SerialException:
       print_error('Connection to ' + serial_path + ' lost!\nExiting daemon...\n')
       listener_alive = False
@@ -245,6 +261,9 @@ if __name__ == '__main__':
   safe_tx = False
   prefix=None
   suffix=None
+  listener_mute = False
+  cwdir = os.getcwd()
+  dumpfile = None
   
   uart_conn = Serial(serial_path,baud,data_size,par,stop_size)
   
@@ -319,6 +338,58 @@ if __name__ == '__main__':
       elif cin == '\\unsafe':
         print_info('Safe transmit mode disabled\n')
         safe_tx = False
+        continue
+      elif cin == '\\unmute':
+        print_info('Listner unmuted\n')
+        listener_mute = False
+        continue
+      elif cin == '\\mute':
+        print_info('Listner muted\n')
+        listener_mute = True
+        continue
+      elif cin == '\\nodump':
+        print_info('Dumping disabled\n')
+        dumpfile = None
+        continue
+      elif cin.startswith('\\dump'):
+        cin = cin[5:]
+        tmpfile = None
+        cin = cin.split(' ')
+        if len(cin) == cin.count(''):
+          tmpfile = 'uartrx.bin'
+        else:
+          extra_arg =''
+          for arg in cin:
+            if arg != '':
+              if tmpfile == None:
+                tmpfile = arg
+              elif extra_arg == '':
+                extra_arg = arg
+              else:
+                extra_arg+=(', '+extra_arg)
+          if extra_arg != '':
+            print_warn('Ignoring following extra arguments:\033[0m '+extra_arg+'\n')
+        if not os.path.isfile(cwdir + '/' + tmpfile):
+          try:
+            tmpdump = open(cwdir + '/' + tmpfile,'x')
+            tmpdump.close()
+          except:
+            print_error('Cannot find or create file \033[0m'+tmpfile+'\033[31m in current path!\n')
+            continue
+        try:
+          tmpdump = open(cwdir + '/' + tmpfile,'r')
+          tmpdump.close()
+          dumpfile = tmpfile
+          print_info('Received bytes will be dumped to \033[0m'+dumpfile+'\n')
+        except:
+          print_error('Cannot open file \033[0m'+tmpfile+'\033[31m!\n')
+        finally:
+          continue
+      elif cin.startswith('\\send'): #TODO
+        print_error('Not Implemented!\n')
+        continue
+      elif cin.startswith('\\setdir'): #TODO
+        print_error('Not Implemented!\n')
         continue
       elif cin.startswith('\\pref'):
         cin = cin[5:]
