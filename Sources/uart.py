@@ -63,8 +63,8 @@ def check_listener(signum, frame):
 
 
 def print_commands():
-  write(' ~ \\binhex : print received bytes as binary number\n')
-  write(' ~ \\bin    : print received bytes as binary number and hexadecimal equivalent\n')
+  write(' ~ \\bin    : print received bytes as binary number\n')
+  write(' ~ \\binhex : print received bytes as binary number and hexadecimal equivalent\n')
   write(' ~ \\c      : print received bytes as character\n')
   write(' ~ \\char   : print received bytes as character\n')
   write(' ~ \\dec    : print received bytes as decimal number\n')
