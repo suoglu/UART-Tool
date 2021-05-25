@@ -72,7 +72,7 @@ def print_commands():
   write(' ~ \\char   : print received bytes as character\n')
   write(' ~ \\dec    : print received bytes as decimal number\n')
   write(' ~ \\dechex : print received bytes as decimal number and hexadecimal equivalent\n')
-  write(' ~ \\dump   : dump received bytes in dumpfile, if argument given use it as file name\n') #TODO
+  write(' ~ \\dump   : dump received bytes in dumpfile, if argument given use it as file name\n')
   write(' ~ \\exit   : exits the script\n')
   write(' ~ \\h      : print received bytes as hexadecimal number\n')
   write(' ~ \\hex    : print received bytes as hexadecimal number\n')
@@ -346,10 +346,14 @@ if __name__ == '__main__':
       elif cin == '\\mute':
         print_info('Listner muted\n')
         listener_mute = True
+        if dumpfile == None:
+          print_warn('Dumping is disabled, received data will be discarded!\n')
         continue
       elif cin == '\\nodump':
         print_info('Dumping disabled\n')
         dumpfile = None
+        if listener_mute:
+          print_warn('Listener is muted, received data will be discarded!\n')
         continue
       elif cin.startswith('\\dump'):
         cin = cin[5:]

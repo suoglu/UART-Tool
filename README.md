@@ -58,12 +58,16 @@ Commands allow user to change software configurations and interract with the scr
 |`char`|`c`|Character data mode|
 |`dec`||Decimal data mode|
 |`dechex`||Decimal data mode, also print hexadecimal equivalent|
+|`dump [filename]`||Dump received bytes into a file, filename can be given as argument|
 |`exit`||Exits the script same as `quit`|
 |`hex`|`h`|Hexadecimal data mode|
+|`mute`||Do not show received data on terminal|
+|`nodump`||Stop dumping received data|
 |`pref [data]`||Add bytes to prefix, data should be given as hexadecimal|
 |`quit`|`q`|Exits the script same as `exit`|
 |`safe`||Enable safe transmit mode|
 |`suff [data]`||Add bytes to suffix, data should be given as hexadecimal|
+|`unmute`||Show received data on terminal|
 |`unsafe`||Disable safe transmit mode|
 
 ## Dependencies
