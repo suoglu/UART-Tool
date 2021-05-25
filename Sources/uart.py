@@ -369,11 +369,11 @@ if __name__ == '__main__':
         safe_tx = False
         continue
       elif cin == '\\unmute':
-        print_info('Listner unmuted\n')
+        print_info('Listener unmuted\n')
         listener_mute = False
         continue
       elif cin == '\\mute':
-        print_info('Listner muted\n')
+        print_info('Listener muted\n')
         listener_mute = True
         if dumpfile == None:
           print_warn('Dumping is disabled, received data will be discarded!\n')
