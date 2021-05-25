@@ -71,7 +71,7 @@ Commands allow user to change software configurations and interract with the scr
 |`pref [data]`||Add bytes to prefix, data should be given as hexadecimal|
 |`quit`|`q`|Exits the script same as `exit`|
 |`safe`||Enable safe transmit mode|
-|`send`||Send files|
+|`send`|`s`|Send files|
 |`setpath`||set directory for file operations, full or relative path, empty for cwd |
 |`suff [data]`||Add bytes to suffix, data should be given as hexadecimal|
 |`unmute`||Show received data on terminal|

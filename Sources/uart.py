@@ -94,6 +94,7 @@ def print_help():
   print_raw('   ~ \\q       : exits the script\n')
   print_raw('   ~ \\quit    : exits the script\n')
   print_raw('   ~ \\safe    : in non char mode, stop sending if non number given\n')
+  print_raw('   ~ \\s       : send files\n')
   print_raw('   ~ \\send    : send files\n')
   print_raw('   ~ \\setpath : set directory for file operations, full or relative path, empty for cwd\n')
   print_raw('   ~ \\suff    : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
@@ -420,15 +421,18 @@ if __name__ == '__main__':
           print_error('Cannot open file \033[0m'+tmpfile+'\033[31m!\n')
         finally:
           continue
-      elif cin.startswith('\\send'):
+      elif cin.startswith('\\send') or cin.startswith('\\s ') or cin == '\\s':
         sendByte = 0
         sendFile = 0
-        if cin.strip() == '\\send':
+        if cin.strip() == '\\send' or cin.strip() == '\\s':
           signal.signal(signal.SIGALRM, input_timeout)
           signal.alarm(400)
           files = input('Please provide the name of file(s): ')
         else:
-          cin = cin[5:]
+          if cin.strip() == '\\send':
+            cin = cin[5:]
+          else:
+            cin = cin[2:]
           files = cin.strip()
         files = files.split(' ')
         for filename in files:
