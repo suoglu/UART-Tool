@@ -303,8 +303,10 @@ if __name__ == '__main__':
       signal.signal(signal.SIGALRM, check_listener)
       signal.alarm(1)
       cin = input() #Wait for input 
-      if cin.strip() == '':
+      cin = cin.strip()
+      if cin == '':
         continue
+      
       print_raw('\033[F'+get_now()+' ') #print timestamp
       #command handling
       if cin == '\quit' or cin =='\exit' or cin =='\q':
