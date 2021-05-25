@@ -62,6 +62,7 @@ Commands allow user to change software configurations and interract with the scr
 |`dechex`||Decimal data mode, also print hexadecimal equivalent|
 |`dump [filename]`||Dump received bytes into a file, filename can be given as argument|
 |`exit`||Exits the script same as `quit`|
+|`getpath`||Prints working directory|
 |`hex`|`h`|Hexadecimal data mode|
 |`help`||Prints information about the script|
 |`license`||Prints license information|

@@ -83,6 +83,7 @@ def print_help():
   print_raw('   ~ \\dechex  : print received bytes as decimal number and hexadecimal equivalent\n')
   print_raw('   ~ \\dump    : dump received bytes in dumpfile, if argument given use it as file name\n')
   print_raw('   ~ \\exit    : exits the script\n')
+  print_raw('   ~ \\getpath : prints working directory\n')
   print_raw('   ~ \\h       : print received bytes as hexadecimal number\n')
   print_raw('   ~ \\help    : prints this message\n')
   print_raw('   ~ \\hex     : print received bytes as hexadecimal number\n')
@@ -453,9 +454,14 @@ if __name__ == '__main__':
         else:
           print_info('Wrote '+str(sendByte)+' bytes from '+str(sendFile)+' file(s)\n')
         continue
+      elif cin == '\\getpath':
+        print_info('Current path: \033[0m'+cwdir+'\n')
+        if listener_mute:
+          print_warn('Listener is muted, received data will be discarded!\n')
+        continue
       elif cin.startswith('\\setpath'):
         cin = cin.strip()
-        if cin == '\\setdir':
+        if cin == '\\setpath':
           cwdir = os.getcwd()
         else:
           cin = cin[8:]
