@@ -4,6 +4,7 @@
 #  Title       : UART Script v1.0             #                        
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
+#  License     : MIT License                  #
 #  Last Edit   : 24/05/2021                   #
 #*-------------------------------------------*#
 #  Description : Python3 script for serial    #
