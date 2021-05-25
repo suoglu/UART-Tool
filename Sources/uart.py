@@ -131,6 +131,7 @@ def uart_listener(): #TODO: keep the prompt already written in terminal when new
 
 #Main function
 if __name__ == '__main__':
+  print_info('Welcome to the UART Script!\n')
   baud = 115200
   serial_path = '/dev/ttyUSB'
   data_size = serial.EIGHTBITS
