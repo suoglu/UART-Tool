@@ -65,30 +65,34 @@ def check_listener(signum, frame):
   raise TimeoutError
 
 
-def print_commands():
-  print_raw(' ~ \\bin     : print received bytes as binary number\n')
-  print_raw(' ~ \\binhex  : print received bytes as binary number and hexadecimal equivalent\n')
-  print_raw(' ~ \\c       : print received bytes as character\n')
-  print_raw(' ~ \\char    : print received bytes as character\n')
-  print_raw(' ~ \\dec     : print received bytes as decimal number\n')
-  print_raw(' ~ \\dechex  : print received bytes as decimal number and hexadecimal equivalent\n')
-  print_raw(' ~ \\dump    : dump received bytes in dumpfile, if argument given use it as file name\n')
-  print_raw(' ~ \\exit    : exits the script\n')
-  print_raw(' ~ \\h       : print received bytes as hexadecimal number\n')
-  print_raw(' ~ \\help    : prints this message\n')
-  print_raw(' ~ \\hex     : print received bytes as hexadecimal number\n')
-  print_raw(' ~ \\mute    : do not print received received to terminal\n')
-  print_raw(' ~ \\nodump  : stop dumping received bytes in dumpfile\n')
-  print_raw(' ~ \\pref    : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
-  print_raw(' ~ \\q       : exits the script\n')
-  print_raw(' ~ \\quit    : exits the script\n')
-  print_raw(' ~ \\safe    : in non char mode, stop sending if non number given\n')
-  print_raw(' ~ \\send    : send the files in argument\n') #TODO
-  print_raw(' ~ \\setpath : set directory for file operations, full or relative path, empty for cwd\n') #TODO
-  print_raw(' ~ \\suff    : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
-  print_raw(' ~ \\unmute  : print received received to terminal\n')
-  print_raw(' ~ \\unsafe  : in non char mode, do not stop sending if non number given\n')
-  print_raw('\nTo send a \'\\\' as a first byte use \'\\\\\'\n')
+def print_help():
+  print_raw('  Usage:\n')
+  print_raw('   Enter a command or data to send. Commands start with \'\\\'. To send a \'\\\' as a first byte use \'\\\\\'\n')
+  print_raw('\n')
+  print_raw('  Available Commands:\n')
+  print_raw('   ~ \\bin     : print received bytes as binary number\n')
+  print_raw('   ~ \\binhex  : print received bytes as binary number and hexadecimal equivalent\n')
+  print_raw('   ~ \\c       : print received bytes as character\n')
+  print_raw('   ~ \\char    : print received bytes as character\n')
+  print_raw('   ~ \\dec     : print received bytes as decimal number\n')
+  print_raw('   ~ \\dechex  : print received bytes as decimal number and hexadecimal equivalent\n')
+  print_raw('   ~ \\dump    : dump received bytes in dumpfile, if argument given use it as file name\n')
+  print_raw('   ~ \\exit    : exits the script\n')
+  print_raw('   ~ \\h       : print received bytes as hexadecimal number\n')
+  print_raw('   ~ \\help    : prints this message\n')
+  print_raw('   ~ \\hex     : print received bytes as hexadecimal number\n')
+  print_raw('   ~ \\license : prints license information\n')
+  print_raw('   ~ \\mute    : do not print received received to terminal\n')
+  print_raw('   ~ \\nodump  : stop dumping received bytes in dumpfile\n')
+  print_raw('   ~ \\pref    : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
+  print_raw('   ~ \\q       : exits the script\n')
+  print_raw('   ~ \\quit    : exits the script\n')
+  print_raw('   ~ \\safe    : in non char mode, stop sending if non number given\n')
+  print_raw('   ~ \\send    : send the files in argument\n') #TODO
+  print_raw('   ~ \\setpath : set directory for file operations, full or relative path, empty for cwd\n')
+  print_raw('   ~ \\suff    : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
+  print_raw('   ~ \\unmute  : print received received to terminal\n')
+  print_raw('   ~ \\unsafe  : in non char mode, do not stop sending if non number given\n')
 
 
 #listener daemon
@@ -287,8 +291,12 @@ if __name__ == '__main__':
         break
       elif cin == '\help':
         print_info('Help\n')
-        print_raw('Available Commands:\n')
-        print_commands()
+        print_help()
+        continue
+      elif cin == '\license':
+        print_info('License\n')
+        print_raw('EUPL-1.2\n')
+        print_raw('Full text: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12\n')
         continue
       elif cin == '\char' or cin == '\c':
         char = True
@@ -475,6 +483,7 @@ if __name__ == '__main__':
           cin = cin[1:]
         else:
           print_warn('Command \033[0m' + cin + '\033[91m does not exist!\n')
+          print_info('Use \033[0m\\help\033[2m to see the list of available commands\n')
           continue
       #Data handling
       error_str = ''

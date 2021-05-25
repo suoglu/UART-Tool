@@ -64,6 +64,7 @@ Commands allow user to change software configurations and interract with the scr
 |`exit`||Exits the script same as `quit`|
 |`hex`|`h`|Hexadecimal data mode|
 |`help`||Prints information about the script|
+|`license`||Prints license information|
 |`mute`||Do not show received data on terminal|
 |`nodump`||Stop dumping received data|
 |`pref [data]`||Add bytes to prefix, data should be given as hexadecimal|
