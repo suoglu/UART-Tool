@@ -409,7 +409,6 @@ if __name__ == '__main__':
         print_info('\nExiting...\n')
         sys.exit(1)
   if serial_path == '/dev/ttyUSB':
-    print_warn('\nCannot find a ttyUSB device, searching for a ttyACM device...')
     serial_path = '/dev/ttyACM'
     for i in range(search_range + 1):
       current = serial_path + str(i)
@@ -424,7 +423,6 @@ if __name__ == '__main__':
         print_info('\nExiting...\n')
         sys.exit(1)
   if serial_path == '/dev/ttyACM':
-    print_warn('\nCannot find a ttyACM device, searching for a ttyCOM device...')
     serial_path = '/dev/ttyCOM'
     current = ''
     for i in range(search_range + 1):
