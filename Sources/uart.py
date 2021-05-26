@@ -22,6 +22,7 @@ import os
 from serial import Serial
 
 global listener_alive
+global block_listener
 
 
 #Prompt coloring
@@ -113,6 +114,7 @@ def uart_listener():  #? if possible, TODO: keep the prompt already written in t
   last_line = ''
   byte_counter = 0
   global listener_alive
+  global block_listener
 
   while True:  #main loop for listener
     try:
@@ -131,8 +133,10 @@ def uart_listener():  #? if possible, TODO: keep the prompt already written in t
           if hex_add:
             buff += (' (' + hex(val) + ')')
           buff += ' '
-
-        if (timer_stamp < get_time_stamp()) or ((buff == '\n') and char) or ((byte_counter == 15) and not char):
+        byte_brake = ((byte_counter == 15) and not char) or ((byte_counter == 80) and char)
+        line_end = (buff == '\n') and char
+        if (timer_stamp < get_time_stamp()) or line_end or byte_brake or block_listener:
+          block_listener = False
           byte_counter = 0
           last_line = '\033[F' + '\n' + get_now() + ' \033[36mGot:\033[0m '
         else:
@@ -143,7 +147,7 @@ def uart_listener():  #? if possible, TODO: keep the prompt already written in t
         print_raw(last_line + '\n')
         print_input_symbol()
         sys.stdout.flush()
-        timer_stamp = get_time_stamp() + 70000
+        timer_stamp = get_time_stamp() + 100000
       if dumpfile is not None:
         try:
           dump_path = working_directory + '/' + dumpfile
@@ -472,6 +476,7 @@ if __name__ == '__main__':
     sys.exit(4)
 
   listener_alive = True
+  block_listener = False
   cin = ''
   print_input_symbol()
 
@@ -482,25 +487,30 @@ if __name__ == '__main__':
       signal.signal(signal.SIGALRM, check_listener)
       signal.alarm(1)
       cin = input()  #Wait for input
+      stamp = '\033[F' + get_now() + ' '
       signal.signal(signal.SIGALRM, process_timeout)
       signal.alarm(1800)  #Half an hour
       cin = cin.strip()
       if cin == '':
         continue
 
-      print_raw('\033[F' + get_now() + ' ')  #print timestamp
       #command handling
       if cin == '\\quit' or cin == '\\exit' or cin == '\\q':
+        print_raw(stamp)  #print timestamp
         break
       elif cin == '\\help':
+        print_raw(stamp)  #print timestamp
         print_info('Help\n')
         print_help()
+        block_listener = True
         print_input_symbol()
         continue
       elif cin == '\\license':
+        print_raw(stamp)  #print timestamp
         print_info('License\n')
         print_raw('EUPL-1.2\n')
         print_raw('Full text: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin == '\\char' or cin == '\\c':
@@ -508,11 +518,15 @@ if __name__ == '__main__':
         dec_ow = False
         bin_ow = False
         hex_add = False
+        print_raw(stamp)  #print timestamp
         print_info('Received bytes will be printed as character\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin == '\\hex' or cin == '\\h':
+        print_raw(stamp)  #print timestamp
         print_info('Received bytes will be printed as hexadecimal number\n')
+        block_listener = True
         char = False
         dec_ow = False
         bin_ow = False
@@ -520,7 +534,9 @@ if __name__ == '__main__':
         print_input_symbol()
         continue
       elif cin == '\\dec':
+        print_raw(stamp)  #print timestamp
         print_info('Received bytes will be printed as decimal number\n')
+        block_listener = True
         char = False
         dec_ow = True
         bin_ow = False
@@ -528,7 +544,9 @@ if __name__ == '__main__':
         print_input_symbol()
         continue
       elif cin == '\\bin':
+        print_raw(stamp)  #print timestamp
         print_info('Received bytes will be printed as binary number\n')
+        block_listener = True
         char = False
         dec_ow = False
         bin_ow = True
@@ -536,7 +554,9 @@ if __name__ == '__main__':
         print_input_symbol()
         continue
       elif cin == '\\dechex':
+        print_raw(stamp)  #print timestamp
         print_info('Received bytes will be printed as decimal number and hexadecimal equivalent\n')
+        block_listener = True
         char = False
         dec_ow = True
         bin_ow = False
@@ -544,7 +564,9 @@ if __name__ == '__main__':
         print_input_symbol()
         continue
       elif cin == '\\binhex':
+        print_raw(stamp)  #print timestamp
         print_info('Received bytes will be printed as binary number and hexadecimal equivalent\n')
+        block_listener = True
         char = False
         dec_ow = False
         bin_ow = True
@@ -552,21 +574,27 @@ if __name__ == '__main__':
         print_input_symbol()
         continue
       elif cin == '\\safe':
+        print_raw(stamp)  #print timestamp
         print_info('Safe transmit mode enabled\n')
+        block_listener = True
         safe_tx = True
         print_input_symbol()
         continue
       elif cin == '\\unsafe':
+        print_raw(stamp)  #print timestamp
         print_info('Safe transmit mode disabled\n')
+        block_listener = True
         safe_tx = False
         print_input_symbol()
         continue
       elif cin == '\\unmute':
+        print_raw(stamp)  #print timestamp
         print_info('Listener unmuted\n')
         listener_mute = False
         print_input_symbol()
         continue
       elif cin == '\\mute':
+        print_raw(stamp)  #print timestamp
         print_info('Listener muted\n')
         listener_mute = True
         if dumpfile is None:
@@ -574,16 +602,19 @@ if __name__ == '__main__':
         print_input_symbol()
         continue
       elif cin == '\\nodump':
+        print_raw(stamp)  #print timestamp
         print_info('Dumping disabled\n')
         dumpfile = None
         if listener_mute:
           print_warn('Listener is muted, received data will be discarded!\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin.startswith('\\dump'):
         cin = cin[5:]
         tmp_file = None
         cin = cin.split(' ')
+        print_raw(stamp)  #print timestamp
         if len(cin) == cin.count(''):
           tmp_file = 'uart_received.bin'
         else:
@@ -615,12 +646,14 @@ if __name__ == '__main__':
         except Exception as open_error:
           print_error('Cannot open file \033[0m' + tmp_file + '\033[31m!\n')
           print_error(str(open_error)+'\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin.startswith('\\send') or cin.startswith('\\s ') or cin == '\\s':
         sendByte = 0
         sendFile = 0
         if cin.strip() == '\\send' or cin.strip() == '\\s':
+          block_listener = True
           files = input('Please provide the name of the file(s): ')
         else:
           if cin.strip() == '\\send':
@@ -637,6 +670,7 @@ if __name__ == '__main__':
               file = open(full_path, 'rb')
               sendFile += 1
             except Exception as open_err:
+              print_raw(stamp)  #print timestamp
               print_error('Cannot open file \033[0m' + filename + '\033[31m!\n')
               print_error(str(open_err) + '\n')
               if safe_tx:
@@ -650,16 +684,18 @@ if __name__ == '__main__':
               serial_write(byte)
               sendByte += 1
               byte = file.read(1)
+        print_raw(stamp)  #print timestamp
         if sendFile == 0:
           print_warn("Didn't write anything\n")
         else:
           print_info('Wrote ' + str(sendByte) + ' bytes from ' + str(sendFile) + ' file(s)\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin == '\\getpath':
+        print_raw(stamp)  #print timestamp
         print_info('Current path: \033[0m' + working_directory + '\n')
-        if listener_mute:
-          print_warn('Listener is muted, received data will be discarded!\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin.startswith('\\setpath'):
@@ -670,6 +706,7 @@ if __name__ == '__main__':
           cin = cin[8:]
           cin = cin.split(' ')
           tmpdir = None
+          print_raw(stamp)  #print timestamp
           for arg in cin:
             if arg != '':
               if tmpdir is None:
@@ -688,6 +725,7 @@ if __name__ == '__main__':
             print_input_symbol()
             continue
         print_info('Working directory set to \033[0m' + working_directory + '\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin.startswith('\\pref'):
@@ -695,9 +733,11 @@ if __name__ == '__main__':
         try:
           cin = cin.split(' ')
           hold_bytes = []
+          print_raw(stamp)  #print timestamp
           if len(cin) == cin.count(''):
             prefix = None
             print_info('Prefix removed\n')
+            block_listener = True
           else:
             for item in cin:
               if item != '':
@@ -713,6 +753,7 @@ if __name__ == '__main__':
           print_error('Arguments must be hexadecimal!\n')
         except Exception as err:
           print_error(str(err)+'\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin.startswith('\\suff'):
@@ -720,6 +761,7 @@ if __name__ == '__main__':
         try:
           cin = cin.split(' ')
           hold_bytes = []
+          print_raw(stamp)  #print timestamp
           if len(cin) == cin.count(''):
             suffix = None
             print_info('Suffix removed\n')
@@ -738,14 +780,17 @@ if __name__ == '__main__':
           print_error('Arguments must be hexadecimal!\n')
         except Exception as err:
           print_error(str(err)+'\n')
+        block_listener = True
         print_input_symbol()
         continue
       elif cin.startswith('\\'):
         if cin.startswith('\\\\'):
           cin = cin[1:]
         else:
+          print_raw(stamp)  #print timestamp
           print_warn('Command \033[0m' + cin + '\033[91m does not exist!\n')
           print_info('Use \033[0m\\help\033[2m to see the list of available commands\n')
+          block_listener = True
           print_input_symbol()
           continue
       #Data handling
@@ -774,6 +819,7 @@ if __name__ == '__main__':
               toSend = int(item, 16)
           except ValueError:
             error_str += (item + ' is not a valid number!\n')
+            block_listener = True
             if safe_tx:
               break
           except Exception as err:
@@ -791,8 +837,11 @@ if __name__ == '__main__':
           serial_write(byte)
 
       cin += '\n'
+      print_raw(stamp)  #print timestamp
       print_raw('\033[33mSend:\033[0m ' + cin)
-      print_error(error_str)
+      if error_str != '':
+        print_error(error_str+'\n')
+      block_listener = True
       print_input_symbol()
 
     except serial.SerialException:
