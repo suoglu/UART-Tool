@@ -142,7 +142,6 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
         else:
           print_raw('\033[F\r')
           byte_counter += 1
-
         last_line += buff
         print_raw(last_line + '\n')
         print_input_symbol()
@@ -151,9 +150,9 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
       if dumpfile is not None:
         try:
           dump_path = working_directory + '/' + dumpfile
-          dump = open(dump_path, 'ab')
-          dump.write(read_byte)
-          dump.close()
+          with open(dump_path, 'ab') as dump:
+            dump.write(read_byte)
+            dump.close()
         except Exception as dump_error:
           print_error('Cannot dump to file \033[0m' + dumpfile + '\033[31m!\n')
           print_error(str(dump_error) + '\n')
@@ -460,6 +459,7 @@ if __name__ == '__main__':
   listener_mute = False
   working_directory = os.getcwd()
   dumpfile = None
+  global block_listener
 
   try:
     uart_conn = Serial(serial_path, baud, data_size, par, stop_size)
@@ -618,17 +618,13 @@ if __name__ == '__main__':
         if len(cin) == cin.count(''):
           tmp_file = 'uart_received.bin'
         else:
-          extra_arg = ''
           for arg in cin:
             if arg != '':
               if tmp_file is None:
                 tmp_file = arg
-              elif extra_arg == '':
-                extra_arg = arg
               else:
-                extra_arg += (', ' + arg)
-          if extra_arg != '':
-            print_warn('Ignoring following extra arguments:\033[0m ' + extra_arg + '\n')
+                print_warn('Ignoring extra arguments\n')
+                break
         if not os.path.isfile(working_directory + '/' + tmp_file):
           try:
             tmp_dump = open(working_directory + '/' + tmp_file, 'x')
@@ -684,6 +680,7 @@ if __name__ == '__main__':
               serial_write(byte)
               sendByte += 1
               byte = file.read(1)
+            file.close()
         print_raw(stamp)  #print timestamp
         if sendFile == 0:
           print_warn("Didn't write anything\n")
@@ -713,6 +710,7 @@ if __name__ == '__main__':
                 tmpdir = arg
               else:
                 print_warn('Ignoring extra arguments\n')
+                break
           if tmpdir.startswith('~/'):
             tmpdir = str(os.path.expanduser("~")) + tmpdir[1:]
           elif not tmpdir.startswith('/'):
