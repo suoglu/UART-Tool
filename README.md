@@ -23,11 +23,27 @@ This repository contains python3 script, [uart.py](Sources/uart.py), for basic s
 
 ### Description
 
-When the [script](Sources/uart.py) run, it polls for a serial device. First it searches for a *ttyUSB* device, then for a *ttyACM* device and finally for a *ttyCOM* device. If nothing is found, it exits. If found software configurations are initialized and script waits for and user input. Anything that starts with a single `\` considered a command, everything else data. To send a `\`, `\\` should be entered. Data can be entered as a character or a number of different bases. When the connection is lost, script automatically exits. User can also exit via exit commands or by keyboard interrupt.
+When the tool is run, it polls for a serial device. First it searches for a *ttyUSB* device, then for a *ttyACM* device and finally for a *ttyCOM* device. If nothing is found, it exits. If found software configurations are initialized and script waits for and user input. Tool also starts logging errors and program messages in program log. This log file is deleted by default upon normal exit.
+
+Arguments can be given to change UART configurations. These can only be given during the [script](Sources/uart.py) call.
+
+After initialization, user can enter data or issue commands. Anything that starts with a single `\` considered a command, everything else data. To send a `\`, `\\` should be entered. Data can be entered as a character or a number of different bases. 
+
+When the connection is lost, script automatically exits. User can also exit via exit commands or by keyboard interrupt.
 
 ## Arguments
 
-Default configurations for the UART is 8-bit data with no parity and 1 stop bit; and baud rate set to 115.2k. User can change these configurations via arguments when calling the tool. User can also specify a serial device path. Device name must start with *tty*. Tool automatically detects arguments. Supported arguments (Bold for default values):
+User can change UART configurations via arguments when calling the [script](Sources/uart.py). Default configurations for the UART is 8-bit data with no parity and 1 stop bit; and baud rate set to 115.2k.
+
+There are also helper functionalities provided with the arguments. One of these functionalities can be used at once, and script exits after doing its job. Passing `help` as an argument provides information about the script call.
+
+### Interactive Call
+
+One way to change UART configurations is interactive call. When `i` is passed as an argument when calling the [script](Sources/uart.py), tool is initialized in interactive mode. In this mode tool asks user for configurations. When an empty answer is given default value for asked configuration is used.
+
+### Configuration Arguments
+
+User can also change UART configurations directly via arguments when calling the tool. User can also specify a serial device path. Device name must start with *tty*. Tool automatically detects arguments. Supported arguments (Bold for default values):
 
 * Data size: 5, 6, 7, **8**
 * Baud rate: **115.2k**, 1.2k<
@@ -38,20 +54,26 @@ Default configurations for the UART is 8-bit data with no parity and 1 stop bit;
 
 Tool also provide some helper functionality via arguments. When one of these arguments passed, tool exits after it's done. When multiple arguments are passed, only argument is processed.
 
-* Help: Print info about arguments
-* Search: Search for available devices
-* i: interactive start, tool asks for serial configurations
+### Device Search mode
+
+When `search` is given as argument, script searches for *ttyUSB*, *ttyACM* and *ttyCOM* devices. It lists the found devices and exits.
 
 ## Software configurations
 
 Software configurations handle how to interpret data and adds some options. Currently, implemented options (Bold for default values):
 
 * Data type: **character**, hexadecimal number, decimal number, binary number
-* Safe transmit: **Disabled**; relevant to sending non-character, if current data is not a numeric value stop sending
-* Prefix: **None**; Bytes to send before data
-* Suffix: **None**; Bytes to send after data
-* Mute: **Disabled**; Do not print received data to terminal
-* Dumping: **Disabled**; Dump received bytes into a file
+  * Determines how the data is interpreted. In character mode everything is displayed and received as their character value. In numeric modes, data is taken and displayed in chosen base. In this mode user can specify bases with `0x`, `0b`, `0o` and `0d`.
+* Safe transmit: **Disabled**
+  * In numeric mode, when a non-numeric data entered stop sending.
+* Prefix: **None**
+  * These bytes send before the data
+* Suffix: **None**
+  * These bytes send after the data
+* Mute: **Disabled**
+  * Do not print received data to terminal.
+* Dumping: **Disabled**
+  * Dump received bytes into a file. If a file name is not provided, use default.
 
 When in a numeric data mode; data must be entered as a numeric value with respect to current set data type or by specifying its base.
 
@@ -61,27 +83,27 @@ Commands allow user to change software configurations and interact with the scri
 
 |Command|Shortened|Description|
 |:---:|:---:|---|
-|`bin`||Binary data mode|
-|`binhex`||Binary data mode, also print hexadecimal equivalent|
+|`bin`|-|Binary data mode|
+|`binhex`|-|Binary data mode, also print hexadecimal equivalent|
 |`char`|`c`|Character data mode|
-|`dec`||Decimal data mode|
-|`dechex`||Decimal data mode, also print hexadecimal equivalent|
-|`dump [filename]`||Dump received bytes into a file, filename can be given as argument|
-|`exit`||Exits the script same as `quit`|
-|`getpath`||Prints working directory|
+|`dec`|-|Decimal data mode|
+|`dechex`|-|Decimal data mode, also print hexadecimal equivalent|
+|`dump [filename]`|-|Dump received bytes into a file, filename can be given as argument|
+|`exit`|-|Exits the script same as `quit`|
+|`getpath`|-|Prints working directory|
 |`hex`|`h`|Hexadecimal data mode|
-|`help`||Prints information about the script|
-|`license`||Prints license information|
-|`mute`||Do not show received data on terminal|
-|`nodump`||Stop dumping received data|
-|`pref [data]`||Add bytes to prefix, data should be given as hexadecimal|
+|`help`|-|Prints information about the script|
+|`license`|-|Prints license information|
+|`mute`|-|Do not show received data on terminal|
+|`nodump`|-|Stop dumping received data|
+|`pref [data]`|-|Add bytes to prefix, data should be given as hexadecimal|
 |`quit`|`q`|Exits the script same as `exit`|
-|`safe`||Enable safe transmit mode|
+|`safe`|-|Enable safe transmit mode|
 |`send`|`s`|Send files|
-|`setpath`||set directory for file operations, full or relative path, empty for cwd |
-|`suff [data]`||Add bytes to suffix, data should be given as hexadecimal|
-|`unmute`||Show received data on terminal|
-|`unsafe`||Disable safe transmit mode|
+|`setpath`|-|set directory for file operations, full or relative path, empty for cwd |
+|`suff [data]`|-|Add bytes to suffix, data should be given as hexadecimal|
+|`unmute`|-|Show received data on terminal|
+|`unsafe`|-|Disable safe transmit mode|
 
 ## Dependencies
 

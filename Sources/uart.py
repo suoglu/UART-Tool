@@ -5,7 +5,7 @@
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
-#  Last Edit   : 25/05/2021                   #
+#  Last Edit   : 26/05/2021                   #
 #*-------------------------------------------*#
 #  Description : Python3 script for serial    #
 #                communication via UART       #
@@ -15,11 +15,11 @@ import sys
 import serial
 import threading
 import time
-import datetime
 import signal
 import os
 
 from serial import Serial
+from datetime import datetime
 
 global listener_alive
 global block_listener
@@ -27,7 +27,7 @@ global block_listener
 
 #Prompt coloring
 def get_now():
-  return '\033[35m' + str(datetime.datetime.now()) + ':\033[0m'
+  return '\033[35m' + str(datetime.now()) + ':\033[0m'
 
 
 def print_error(msg):
@@ -107,7 +107,7 @@ def print_help():
 
 
 #listener daemon
-def uart_listener():  #? if possible, TODO: keep the prompt already written in terminal when new received
+def uart_listener():  #? if possible, keep the prompt already written in terminal when new received
   print_raw(get_now())
   print_info(' Listening...\n')
   timer_stamp = 0
@@ -806,26 +806,32 @@ if __name__ == '__main__':
         for item in cin.split(' '):
           try:
             if item.startswith('0x'):
-              toSend = int(item, 16)
+              toSend = int(item[2:], 16)
             elif item.startswith('0d'):
-              toSend = int(item, 10)
+              toSend = int(item[2:], 10)
             elif item.startswith('0o'):
-              toSend = int(item, 8)
-            elif item.startswith('0b') or bin_ow:
-              toSend = int(cin, 2)
+              toSend = int(item[2:], 8)
+            elif item.startswith('0b'):
+              toSend = int(item[2:], 2)
+            elif bin_ow:
+              toSend = int(item, 2)
             elif dec_ow:
               toSend = int(item, 10)
             else:
               toSend = int(item, 16)
           except ValueError:
-            error_str += (item + ' is not a valid number!\n')
+            error_str += (item + ' is not a valid number!')
             block_listener = True
             if safe_tx:
               break
+            else:
+              continue
           except Exception as err:
             print_error('On '+item+': '+str(err))
             if safe_tx:
               break
+            else:
+              continue
           send_str += (item + ' ')
           serial_write(toSend.to_bytes(1, 'little'))
         cin = send_str
