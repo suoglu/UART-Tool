@@ -74,6 +74,8 @@ Software configurations handle how to interpret data and adds some options. Curr
   * Do not print received data to terminal.
 * Dumping: **Disabled**
   * Dump received bytes into a file. If a file name is not provided, use default.
+* Keep program log: **Disabled**
+  * Do not delete the program log on exit.
 
 When in a numeric data mode; data must be entered as a numeric value with respect to current set data type or by specifying its base.
 
@@ -93,6 +95,7 @@ Commands allow user to change software configurations and interact with the scri
 |`getpath`|-|Prints working directory|
 |`hex`|`h`|Hexadecimal data mode|
 |`help`|-|Prints information about the script|
+|`keeplog`|-|Do not delete program log on exit|
 |`license`|-|Prints license information|
 |`mute`|-|Do not show received data on terminal|
 |`nodump`|-|Stop dumping received data|

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #*-------------------------------------------*#
-#  Title       : UART Tool v1.1               #                        
+#  Title       : UART Tool v1.2               #
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
@@ -23,6 +23,10 @@ from datetime import datetime
 
 global listener_alive
 global block_listener
+global log_listener_check
+global program_log
+global log
+global log_lock
 
 
 #Prompt coloring
@@ -31,7 +35,11 @@ def get_now():
 
 
 def print_error(msg):
+  global log_listener_check
   sys.stdout.write('\033[31m' + msg + '\033[0m')
+  log_thread = threading.Thread(target=log_write, args=[msg.strip('\n')])
+  log_thread.start()
+  log_listener_check = True
 
 
 def print_success(msg):
@@ -47,12 +55,49 @@ def print_warn(msg):
 
 
 #Helper functions
+def print_raw(msg):
+  sys.stdout.write(msg)
+
+
+def get_log_time(entry_time):
+  return entry_time.strftime('%Y%m%d %H:%M:%f ~ ')
+
+
 def get_time_stamp():
   return time.clock_gettime_ns(time.CLOCK_THREAD_CPUTIME_ID)
 
 
-def print_raw(msg):
-  sys.stdout.write(msg)
+def usleep(us):
+  time.sleep(us/1000000.0)
+
+
+def log_write(entry):
+  global program_log
+  global log_lock
+  global log
+  entry_time = datetime.now()
+  attempts = 0
+  while log_lock:
+    if attempts == 100:
+      print_error('Log lock timeout!\n')
+      print_input_symbol()
+      return
+    attempts += 1
+    usleep(10)
+  log_lock = True
+  if program_log is not None:
+    try:
+      log = open(program_log, 'a')
+      log.write(get_log_time(entry_time))
+      log.write(str(entry)+'\n')
+      log.close()
+    except Exception as log_err:
+      program_log = None
+      print_warn('Cannot keep log\n')
+      print_error(str(log_err) + '\n')
+      print_input_symbol()
+    finally:
+      log_lock = False
 
 
 def serial_write(send_data):
@@ -68,11 +113,22 @@ def print_input_symbol():
 
 
 def check_listener(signum, frame):
+  global log_listener_check
+  if log_listener_check:  #so that log wont be spammed with it
+    log_listener_check = False
+    msg = 'listener daemon check ' + str(signum) + ' ' + str(frame)
+    log_thread = threading.Thread(target=log_write, args=[msg])
+    log_thread.start()
   raise TimeoutError
 
 
 def process_timeout(signum, frame):
+  global log_listener_check
   print_warn('Timeout!\n')
+  msg = 'process timeout ' + str(signum) + ' ' + str(frame)
+  log_thread = threading.Thread(target=log_write, args=[msg])
+  log_thread.start()
+  log_listener_check = True
   raise TimeoutError
 
 
@@ -92,6 +148,7 @@ def print_help():
   print_raw('   ~ \\getpath : prints working directory\n')
   print_raw('   ~ \\help    : prints this message\n')
   print_raw('   ~ \033[7m\\hex\033[0m     : print received bytes as hexadecimal number\n')
+  print_raw('   ~ \\keeplog : do not delete programme log\n')
   print_raw('   ~ \\license : prints license information\n')
   print_raw('   ~ \\mute    : do not print received received to terminal\n')
   print_raw('   ~ \\nodump  : stop dumping received bytes in dumpfile\n')
@@ -150,9 +207,9 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
       if dumpfile is not None:
         try:
           dump_path = working_directory + '/' + dumpfile
-          with open(dump_path, 'ab') as dump:
-            dump.write(read_byte)
-            dump.close()
+          dump = open(dump_path, 'ab')
+          dump.write(read_byte)
+          dump.close()
         except Exception as dump_error:
           print_error('Cannot dump to file \033[0m' + dumpfile + '\033[31m!\n')
           print_error(str(dump_error) + '\n')
@@ -171,6 +228,8 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
 #Main function
 if __name__ == '__main__':
   print_info('Welcome to the UART tool v1.1!\n')
+  program_log = None
+  start_time = datetime.now()
   baud = 115200
   serial_path = '/dev/ttyUSB'
   data_size = serial.EIGHTBITS
@@ -447,6 +506,7 @@ if __name__ == '__main__':
     stop_size) + ' stop bit(s)\n\n')
 
   #Software Configurations
+  global block_listener
   char = True
   dec_ow = False
   bin_ow = False
@@ -454,10 +514,26 @@ if __name__ == '__main__':
   safe_tx = False
   prefix = None
   suffix = None
+  keep_log = False
   listener_mute = False
   working_directory = os.getcwd()
   dumpfile = None
-  global block_listener
+  log_listener_check = True
+  log_lock = False
+
+  #Prepare program log
+  try:
+    program_log = 'uart_' + start_time.strftime('%Y%m%dh%Hm%Ms%S') + '.log'
+    log = open(program_log, 'a')
+    log.write(get_log_time(start_time))
+    log.write('program start\n')
+    log.write(get_log_time(datetime.now()))
+    log.write('log start\n')
+    log.close()
+  except Exception as e:
+    program_log = None
+    print_error(str(e)+'\n')
+    print_info('Running without a log\n')
 
   try:
     uart_conn = Serial(serial_path, baud, data_size, par, stop_size)
@@ -569,6 +645,29 @@ if __name__ == '__main__':
         dec_ow = False
         bin_ow = True
         hex_add = True
+        print_input_symbol()
+        continue
+      elif cin == '\\keeplog':
+        print_raw(stamp)  #print timestamp
+        if program_log is not None:
+          keep_log = True
+          print_info('Programme log will be kept\n')
+        else:
+          try:
+            log_lock = True
+            program_log = 'uart_' + start_time.strftime('%Y%m%dh%Hm%Ms%S') + '.log'
+            log = open(program_log, 'a')
+            log.write(get_log_time(start_time))
+            log.write('program start\n')
+            log.write(get_log_time(datetime.now()))
+            log.write('log start, tool run without a log!\n')
+            log.close()
+            keep_log = True
+          except Exception as e:
+            print_error('Cannot keep log\n')
+            print_error(str(e)+'\n')
+          finally:
+            log_lock = False
         print_input_symbol()
         continue
       elif cin == '\\safe':
@@ -866,3 +965,11 @@ if __name__ == '__main__':
 
   print_info('Disconnecting...\n')
   uart_conn.close()
+
+  if program_log is not None and not keep_log:
+    if os.path.isfile(program_log):
+      os.remove(program_log)
+    else:
+      print_warn('Cannot delete program log, \033[0m'+program_log+'\033[91m!\n')
+
+  sys.exit(0)
