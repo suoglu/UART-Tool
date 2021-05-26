@@ -23,41 +23,41 @@ This repository contains python3 script, [uart.py](Sources/uart.py), for basic s
 
 ### Description
 
-When the [script](Sources/uart.py) run, it polls for a serial device. First it searches for a *ttyUSB* device, then for a *ttyACM* device and finaly for a *ttyCOM* device. If nothing is found, it exits. If found software configurations are initialized and script waits for and user input. Anything that starts with a single `\` considered a command, everthing else data. To send a `\`, `\\` should be entered. Data can be entered as character or a number of different bases. When the connection is lost, script automatocally exits. User can also exit via exit commands or by keyboard interrupt.
+When the [script](Sources/uart.py) run, it polls for a serial device. First it searches for a *ttyUSB* device, then for a *ttyACM* device and finally for a *ttyCOM* device. If nothing is found, it exits. If found software configurations are initialized and script waits for and user input. Anything that starts with a single `\` considered a command, everything else data. To send a `\`, `\\` should be entered. Data can be entered as a character or a number of different bases. When the connection is lost, script automatically exits. User can also exit via exit commands or by keyboard interrupt.
 
 ## Arguments
 
-Default configurations for the UART is 8 bit data with no parity and 1 stop bit; and baut rate set to 115.2k. User can change these configurations via arguments when calling the tool. User can also specify a serial device path. Device name must start with *tty*. Tool automatically detects arguments. Supported arguments (Bold for default values):
+Default configurations for the UART is 8-bit data with no parity and 1 stop bit; and baud rate set to 115.2k. User can change these configurations via arguments when calling the tool. User can also specify a serial device path. Device name must start with *tty*. Tool automatically detects arguments. Supported arguments (Bold for default values):
 
 * Data size: 5, 6, 7, **8**
 * Baud rate: **115.2k**, 1.2k<
-* Stop bit size: **1**, 1.5, 2
+* Stop-bit size: **1**, 1.5, 2
 * Parity: **no**, even, odd, mark, space (first letters also work)
 * Device path: */dev/tty\**, ***/dev/ttyUSB\****, ***/dev/ttyACM\****, ***/dev/ttyCOM\****
 * Poll range: **10**...20
 
-Tool also provide some helper functionality via arguments. When one of these arguments passed, tool exits after its done. When multiple arguments are passed, only argument is processed.
+Tool also provide some helper functionality via arguments. When one of these arguments passed, tool exits after it's done. When multiple arguments are passed, only argument is processed.
 
 * Help: Print info about arguments
 * Search: Search for available devices
-* i: interactive start, tool asks for searial configurations
+* i: interactive start, tool asks for serial configurations
 
 ## Software configurations
 
-Software configurations handle how to interpret data and adds some options. Currently implemented options (Bold for default values):
+Software configurations handle how to interpret data and adds some options. Currently, implemented options (Bold for default values):
 
 * Data type: **character**, hexadecimal number, decimal number, binary number
-* Safe transmit: **Disabled**; relavent sending non-character, if current data is not a numaric value stop sending
+* Safe transmit: **Disabled**; relevant to sending non-character, if current data is not a numeric value stop sending
 * Prefix: **None**; Bytes to send before data
 * Suffix: **None**; Bytes to send after data
 * Mute: **Disabled**; Do not print received data to terminal
 * Dumping: **Disabled**; Dump received bytes into a file
 
-When in a numaric data mode; data must be entered as a numaric value with respect to current set data type or by specifying its base.
+When in a numeric data mode; data must be entered as a numeric value with respect to current set data type or by specifying its base.
 
 ## Commands
 
-Commands allow user to change software configurations and interract with the script. Each command start with a single `\`, anything else considered as data. To send a `\` as first byte, use `\\`. Table of available commands can be found below.
+Commands allow user to change software configurations and interact with the script. Each command start with a single `\`, anything else considered as data. To send a `\` as first byte, use `\\`. Table of available commands can be found below.
 
 |Command|Shortened|Description|
 |:---:|:---:|---|
@@ -85,4 +85,4 @@ Commands allow user to change software configurations and interract with the scr
 
 ## Dependencies
 
-Script [uart.py](Sources/uart.py) uses *sys*, *serial*, *threading*, *time*, *datetime*, *os* and *signal* modules. And tested with Python 3.8.6 on Pop!_OS 20.10
+Script [uart.py](Sources/uart.py) uses *sys*, *pyserial*, *threading*, *time*, *datetime*, *os* and *signal* modules, and tested with Python 3.8.6 on Pop!_OS 20.10
