@@ -100,6 +100,7 @@ Commands allow user to change software configurations and interact with the scri
 |`mute`|-|Do not show received data on terminal|
 |`nodump`|-|Stop dumping received data|
 |`pref [data]`|-|Add bytes to prefix, data should be given as hexadecimal|
+|`rand [data size]`|`r`|Send random bytes|
 |`quit`|`q`|Exits the script same as `exit`|
 |`safe`|-|Enable safe transmit mode|
 |`send`|`s`|Send files|
@@ -110,4 +111,4 @@ Commands allow user to change software configurations and interact with the scri
 
 ## Dependencies
 
-Script [uart.py](Sources/uart.py) uses *sys*, *pyserial*, *threading*, *time*, *datetime*, *os* and *signal* modules, and tested with Python 3.8.6 on Pop!_OS 20.10
+Script [uart.py](Sources/uart.py) uses *sys*, *pyserial*, *threading*, *time*, *datetime*, *os*, *random* and *signal* modules, and tested with Python 3.8.6 on Pop!_OS 20.10

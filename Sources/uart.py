@@ -17,6 +17,7 @@ import threading
 import time
 import signal
 import os
+import random
 
 from serial import Serial
 from datetime import datetime
@@ -153,6 +154,7 @@ def print_help():
   print_raw('   ~ \\mute    : do not print received received to terminal\n')
   print_raw('   ~ \\nodump  : stop dumping received bytes in dumpfile\n')
   print_raw('   ~ \\pref    : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
+  print_raw('   ~ \033[7m\\rand\033[0m    : send random bytes, argument determines how many\n')
   print_raw('   ~ \033[7m\\quit\033[0m    : exits the script\n')
   print_raw('   ~ \\safe    : in non char mode, stop sending if non number given\n')
   print_raw('   ~ \033[7m\\send\033[0m    : send files\n')
@@ -177,7 +179,7 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
     try:
       read_byte = uart_conn.read()
       if not listener_mute:
-        if char:
+        if char:  #todo error handling for 'utf-8' codec can't decode byte: unexpected end of data
           buff = read_byte.decode()
         else:
           val = int.from_bytes(read_byte, byteorder='little')
@@ -227,7 +229,7 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
 
 #Main function
 if __name__ == '__main__':
-  print_info('Welcome to the UART tool v1.1!\n')
+  print_info('Welcome to the UART tool v1.2!\n')
   program_log = None
   start_time = datetime.now()
   baud = 115200
@@ -784,6 +786,45 @@ if __name__ == '__main__':
         else:
           print_info('Wrote ' + str(sendByte) + ' bytes from ' + str(sendFile) + ' file(s)\n')
         block_listener = True
+        print_input_symbol()
+        continue
+      elif cin.startswith('\\rand') or cin.startswith('\\r ') or cin == '\\r':  #todo
+        random_byte_count = 1
+        print_raw(stamp)  #print timestamp
+        if cin.strip() != '\\rand' and cin.strip() != '\\r':
+          if cin.startswith('\\rand'):
+            cin = cin[5:].strip()
+          else:
+            cin = cin[2:].strip()
+          arg = cin.split(' ')
+          try:
+            temp = int(arg[0])
+          except ValueError:
+            print_error('Argument should be a number!\n')
+            print_input_symbol()
+            continue
+          except Exception as rand_err:
+            print_error(str(rand_err)+'\n')
+            print_input_symbol()
+            continue
+          if len(arg) != 1:
+            print_warn('Ignoring extra arguments\n')
+          random_byte_count = temp
+        print_info('\033[33mSending\033[0m\033[2m following \033[0m'+str(random_byte_count)+'\033[2m random bytes:\n')
+        random.seed()
+        if random_byte_count > 100:
+          print_info('Too many bytes to show!\n')
+          block_listener = True
+          for i in range(random_byte_count):
+            random_byte = random.randint(0, 255)
+            serial_write(random_byte.to_bytes(1, byteorder='little'))
+        else:
+          random_bytes = ''
+          for i in range(random_byte_count):
+            random_byte = random.randint(0, 255)
+            serial_write(random_byte.to_bytes(1, byteorder='little'))
+            random_bytes += (hex(random_byte)+' ')
+          print_raw(random_bytes+'\n')
         print_input_symbol()
         continue
       elif cin == '\\getpath':
