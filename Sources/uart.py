@@ -171,7 +171,9 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
   print_info(' Listening...\n')
   timer_stamp = 0
   last_line = ''
+  last_timestamp = ''
   byte_counter = 0
+  received_invalid = False
   global listener_alive
   global block_listener
 
@@ -179,8 +181,21 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
     try:
       read_byte = uart_conn.read()
       if not listener_mute:
-        if char:  #todo error handling for 'utf-8' codec can't decode byte: unexpected end of data
-          buff = read_byte.decode()
+        line_end = False
+        buff = ''
+        if char:
+          try:
+            buff = read_byte.decode()
+            line_end = (buff == '\n')
+            if line_end:
+              buff = ''
+          except UnicodeError:
+            buff = '\033[2m[\033[0m\033[95m' + hex(int.from_bytes(read_byte, byteorder='little'))
+            buff += '\033[0m\033[2m]\033[0m'
+            received_invalid = True
+          except Exception as decode_err:
+            print_error(str(decode_err)+'\n')
+            print_warn('Ignoring received byte\n')
         else:
           val = int.from_bytes(read_byte, byteorder='little')
           if dec_ow:
@@ -192,17 +207,23 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
           if hex_add:
             buff += (' (' + hex(val) + ')')
           buff += ' '
-        byte_brake = ((byte_counter == 15) and not char) or ((byte_counter == 80) and char)
-        line_end = (buff == '\n') and char
+        byte_brake = ((not char or received_invalid) and (byte_counter == 15)) or (byte_counter == 63)
         if (timer_stamp < get_time_stamp()) or line_end or byte_brake or block_listener:
+          received_invalid = False
           block_listener = False
           byte_counter = 0
-          last_line = '\033[F' + '\n' + get_now() + ' \033[36mGot:\033[0m '
+          last_line = ''
+          last_timestamp = '\033[F' + '\n' + get_now() + ' \033[36mGot:\033[0m '
         else:
           print_raw('\033[F\r')
           byte_counter += 1
         last_line += buff
-        print_raw(last_line + '\n')
+        line = last_timestamp
+        if char:
+          line += ('\033[2m\'\033[0m'+last_line+'\033[2m\'\033[0m')
+        else:
+          line += last_line
+        print_raw(line + '\n')
         print_input_symbol()
         sys.stdout.flush()
         timer_stamp = get_time_stamp() + 100000
@@ -810,10 +831,11 @@ if __name__ == '__main__':
           if len(arg) != 1:
             print_warn('Ignoring extra arguments\n')
           random_byte_count = temp
-        print_info('\033[33mSending\033[0m\033[2m following \033[0m'+str(random_byte_count)+'\033[2m random bytes:\n')
+        print_info('\033[2mSending \033[0m'+str(random_byte_count)+'\033[2m random byte(s)\n')
+        block_listener = True
         random.seed()
         if random_byte_count > 100:
-          print_info('Too many bytes to show!\n')
+          print_info('\n\033[F\033[0m' + get_now() + '\033[2m Too many bytes to show!\n')
           block_listener = True
           for i in range(random_byte_count):
             random_byte = random.randint(0, 255)
@@ -824,7 +846,9 @@ if __name__ == '__main__':
             random_byte = random.randint(0, 255)
             serial_write(random_byte.to_bytes(1, byteorder='little'))
             random_bytes += (hex(random_byte)+' ')
-          print_raw(random_bytes+'\n')
+          print_raw('\n\033[F' + get_now() + ' \033[33mSend: \033[0m\033[96m'+random_bytes+'\033[0m\n')
+          block_listener = True
+        block_listener = True
         print_input_symbol()
         continue
       elif cin == '\\getpath':
