@@ -5,7 +5,7 @@
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
-#  Last Edit   : 26/05/2021                   #
+#  Last Edit   : 30/05/2021                   #
 #*-------------------------------------------*#
 #  Description : Python3 script for serial    #
 #                communication via UART       #
@@ -418,6 +418,7 @@ if __name__ == '__main__':
     elif current.casefold() == 'search':
       print_info('\nSearching for connected devices...\n')
       found_dev = 0
+      non_res_dev = 0
       poll_path = '/dev/ttyUSB'
       for i in range(search_range + 1):
         current = poll_path + str(i)
@@ -428,7 +429,8 @@ if __name__ == '__main__':
             print_success('\nFound ttyUSB' + str(i))
             found_dev += 1
           except serial.SerialException:
-            print_warn('\nFound ttyUSB' + str(i) + ', but not responding')
+            print_warn('\nFound ttyUSB' + str(i) + ', but cannot connect!')
+            non_res_dev += 1
           except Exception as search_err:
             print_warn(str(search_err)+'\n')
             print_info('Ignoring...\n')
@@ -442,7 +444,8 @@ if __name__ == '__main__':
             print_success('\nFound ttyACM' + str(i))
             found_dev += 1
           except serial.SerialException:
-            print_warn('\nFound ttyACM' + str(i) + ', but not responding')
+            print_warn('\nFound ttyACM' + str(i) + ', but cannot connect!')
+            non_res_dev += 1
           except Exception as search_err:
             print_warn(str(search_err)+'\n')
             print_info('Ignoring...\n')
@@ -454,12 +457,30 @@ if __name__ == '__main__':
             uart_conn = Serial(current, timeout=1)
             uart_conn.close()
             print_success('\nFound ttyCOM' + str(i) + '\n')
+            found_dev += 1
           except serial.SerialException:
-            print_warn('\nFound ttyCOM' + str(i) + ', but not responding')
+            print_warn('\nFound ttyCOM' + str(i) + ', but cannot connect!')
+            non_res_dev += 1
           except Exception as search_err:
             print_warn(str(search_err)+'\n')
             print_info('Ignoring...\n')
-      print_raw('\n')
+      print_raw('\n\n')
+      if found_dev != 0:
+        print_success('Found ')
+        print_raw(str(found_dev))
+        if found_dev == 1:
+          print_success(' device!\n')
+        else:
+          print_success(' devices!\n')
+      if non_res_dev != 0:
+        print_warn('Found ')
+        print_raw(str(non_res_dev))
+        if non_res_dev == 1:
+          print_success(' device, but cannot connect to it!\n!\n')
+        else:
+          print_success(' devices, but cannot connect to them!\n!\n')
+      if non_res_dev == 0 and found_dev == 0:
+        print_error('Cannot find any devices!\n')
       sys.exit(0)
     elif current.startswith('tty'):
       serial_path = '/dev/' + current
