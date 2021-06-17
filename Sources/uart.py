@@ -109,6 +109,8 @@ def log_write(entry, entry_type=''):
       entry_type += ': '
     log = open(str(program_log), 'a')
     log.write(get_log_time(entry_time))
+    for num in range(100):
+      entry = entry.replace(('\033[' + str(num) + 'm'), '')
     entry_list = str(entry).split('\n')
     log.write(entry_type + entry_list[-1].lower() + '\n')
     log.close()
@@ -876,7 +878,7 @@ if __name__ == '__main__':
         block_listener = True
         random.seed()
         if random_byte_count > 100:
-          print_info('\n\033[F\033[0m' + get_now() + '\033[2m Too many bytes to show!\n')
+          print_info(('\n\033[F\033[0m' + get_now() + '\033[2m Too many bytes to show!\n'), False)
           block_listener = True
           for i in range(random_byte_count):
             random_byte = random.randint(0, 255)
