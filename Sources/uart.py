@@ -248,10 +248,10 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
 
 #Main function
 if __name__ == '__main__':
-  print_info('Welcome to the UART tool v1.2!\n')
+  start_time = datetime.now()
   program_log = None
   log_lock = False
-  start_time = datetime.now()
+  print_info('Welcome to the UART tool v1.2!\n')
   baud = 115200
   serial_path = '/dev/ttyUSB'
   data_size = serial.EIGHTBITS
