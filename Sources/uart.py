@@ -5,7 +5,7 @@
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
-#  Last Edit   : 30/05/2021                   #
+#  Last Edit   : 17/06/2021                   #
 #*-------------------------------------------*#
 #  Description : Python3 script for serial    #
 #                communication via UART       #
@@ -35,23 +35,36 @@ def get_now():
   return '\033[35m' + str(datetime.now()) + ':\033[0m'
 
 
-def print_error(msg):
+def print_error(msg, write_log=True):
   global log_listener_check
   sys.stdout.write('\033[31m' + msg + '\033[0m')
-  log_thread = threading.Thread(target=log_write, args=[msg.strip('\n')])
-  log_thread.start()
+  if write_log:
+    log_thread = threading.Thread(target=log_write, args=[msg.strip('\n'), 'error'])
+    log_thread.start()
 
 
-def print_success(msg):
+def print_success(msg, write_log=True):
+  global log_listener_check
   sys.stdout.write('\033[32m' + msg + '\033[0m')
+  if write_log:
+    log_thread = threading.Thread(target=log_write, args=[msg.strip('\n'), 'success'])
+    log_thread.start()
 
 
-def print_info(msg):
+def print_info(msg, write_log=True):
+  global log_listener_check
   sys.stdout.write('\033[2m' + msg + '\033[0m')
+  if write_log:
+    log_thread = threading.Thread(target=log_write, args=[msg.strip('\n'), 'info'])
+    log_thread.start()
 
 
-def print_warn(msg):
+def print_warn(msg, write_log=True):
+  global log_listener_check
   sys.stdout.write('\033[91m' + msg + '\033[0m')
+  if write_log:
+    log_thread = threading.Thread(target=log_write, args=[msg.strip('\n'), 'warning'])
+    log_thread.start()
 
 
 #Helper functions
@@ -71,14 +84,14 @@ def usleep(us):
   time.sleep(us/1000000.0)
 
 
-def log_write(entry):
+def log_write(entry, entry_type=''):
   global program_log
   global log_lock
   global log
   entry_time = datetime.now()
   if program_log is not None and not os.path.isfile(program_log):
     program_log = None
-    print_raw(get_now())
+    print_raw(get_now() + ' ')
     print_warn('Log is missing!\n')
   if program_log is None:
     return
@@ -92,10 +105,12 @@ def log_write(entry):
     usleep(10)
   log_lock = True
   try:
+    if entry_type != '':
+      entry_type += ': '
     log = open(str(program_log), 'a')
     log.write(get_log_time(entry_time))
     entry_list = str(entry).split('\n')
-    log.write(entry_list[-1].lower() + '\n')
+    log.write(entry_type + entry_list[-1].lower() + '\n')
     log.close()
   except Exception as log_err:
     program_log = None
@@ -242,12 +257,12 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
           print_error(str(dump_error) + '\n')
     except serial.SerialException:
       print_error('\033[F\nConnection to ' + serial_path + ' lost!\n')
-      print_info('Exiting daemon...\n')
+      print_info('Killing daemon...\n')
       listener_alive = False
       break
     except Exception as listener_error:
       print_error(str(listener_error) + '\n')
-      print_info('Exiting Daemon...\n')
+      print_info('Killing daemon...\n')
       listener_alive = False
       break
 
@@ -548,11 +563,6 @@ if __name__ == '__main__':
   if serial_path == '/dev/ttyCOM':
     print_error('\nCannot find any devices, exiting...\n')
     sys.exit(1)
-  else:
-    print_success('\nConnected to ' + serial_path)
-
-  print_info('\nConfigurations: ' + str(baud) + ' ' + str(data_size) + ' bits with ' + par_str + ' parity and ' + str(
-    stop_size) + ' stop bit(s)\n\n')
 
   #Software Configurations
   global block_listener
@@ -583,6 +593,10 @@ if __name__ == '__main__':
     program_log = None
     print_error(str(e)+'\n')
     print_info('Running without a log\n')
+
+  print_success('\nConnected to ' + serial_path)
+  print_info('\nConfigurations: ' + str(baud) + ' ' + str(data_size) + ' bits with ' + par_str + ' parity and ' + str(
+    stop_size) + ' stop bit(s)\n\n')
 
   try:
     uart_conn = Serial(serial_path, baud, data_size, par, stop_size)
@@ -623,14 +637,14 @@ if __name__ == '__main__':
         break
       elif cin == '\\help':
         print_raw(stamp)  #print timestamp
-        print_info('Help\n')
+        print_info('Help\n', False)
         print_help()
         block_listener = True
         print_input_symbol()
         continue
       elif cin == '\\license':
         print_raw(stamp)  #print timestamp
-        print_info('License\n')
+        print_info('License\n', False)
         print_raw('EUPL-1.2\n')
         print_raw('Full text: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12\n')
         block_listener = True
@@ -711,6 +725,7 @@ if __name__ == '__main__':
             log.write(get_log_time(datetime.now()))
             log.write('log start, tool run without a log!\n')
             log.close()
+            print_info('New log generated\n')
             keep_log = True
           except Exception as e:
             print_error('Cannot keep log\n')
@@ -769,7 +784,7 @@ if __name__ == '__main__':
               if tmp_file is None:
                 tmp_file = arg
               else:
-                print_warn('Ignoring extra arguments\n')
+                print_warn('Ignoring extra arguments\n', False)
                 break
         if not os.path.isfile(working_directory + '/' + tmp_file):
           try:
@@ -835,7 +850,7 @@ if __name__ == '__main__':
         block_listener = True
         print_input_symbol()
         continue
-      elif cin.startswith('\\rand') or cin.startswith('\\r ') or cin == '\\r':  #todo
+      elif cin.startswith('\\rand') or cin.startswith('\\r ') or cin == '\\r':
         random_byte_count = 1
         print_raw(stamp)  #print timestamp
         if cin.strip() != '\\rand' and cin.strip() != '\\r':
@@ -847,7 +862,7 @@ if __name__ == '__main__':
           try:
             temp = int(arg[0])
           except ValueError:
-            print_error('Argument should be a number!\n')
+            print_error('Argument should be a number!\n', False)
             print_input_symbol()
             continue
           except Exception as rand_err:
@@ -855,7 +870,7 @@ if __name__ == '__main__':
             print_input_symbol()
             continue
           if len(arg) != 1:
-            print_warn('Ignoring extra arguments\n')
+            print_warn('Ignoring extra arguments\n', False)
           random_byte_count = temp
         print_info('\033[2mSending \033[0m'+str(random_byte_count)+'\033[2m random byte(s)\n')
         block_listener = True
@@ -897,7 +912,7 @@ if __name__ == '__main__':
               if tmpdir is None:
                 tmpdir = arg
               else:
-                print_warn('Ignoring extra arguments\n')
+                print_warn('Ignoring extra arguments\n', False)
                 break
           if tmpdir.startswith('~/'):
             tmpdir = str(os.path.expanduser("~")) + tmpdir[1:]
@@ -936,7 +951,7 @@ if __name__ == '__main__':
             prefix = hold_bytes
             print_raw('\n')
         except ValueError:
-          print_error('Arguments must be hexadecimal!\n')
+          print_error('Arguments must be hexadecimal!\n', False)
         except Exception as err:
           print_error(str(err)+'\n')
         block_listener = True
@@ -963,7 +978,7 @@ if __name__ == '__main__':
             suffix = hold_bytes
             print_raw('\n')
         except ValueError:
-          print_error('Arguments must be hexadecimal!\n')
+          print_error('Arguments must be hexadecimal!\n', False)
         except Exception as err:
           print_error(str(err)+'\n')
         block_listener = True
@@ -974,8 +989,8 @@ if __name__ == '__main__':
           cin = cin[1:]
         else:
           print_raw(stamp)  #print timestamp
-          print_warn('Command \033[0m' + cin + '\033[91m does not exist!\n')
-          print_info('Use \033[0m\\help\033[2m to see the list of available commands\n')
+          print_warn(('Command \033[0m' + cin + '\033[91m does not exist!\n'), False)
+          print_info('Use \033[0m\\help\033[2m to see the list of available commands\n', False)
           block_listener = True
           print_input_symbol()
           continue
@@ -1061,6 +1076,6 @@ if __name__ == '__main__':
     if os.path.isfile(program_log):
       os.remove(program_log)
     else:
-      print_warn('Cannot delete program log, \033[0m'+program_log+'\033[91m!\n')
+      print_warn(('Cannot delete program log, \033[0m'+program_log+'\033[91m!\n'), False)
 
   sys.exit(0)
