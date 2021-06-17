@@ -40,7 +40,6 @@ def print_error(msg):
   sys.stdout.write('\033[31m' + msg + '\033[0m')
   log_thread = threading.Thread(target=log_write, args=[msg.strip('\n')])
   log_thread.start()
-  log_listener_check = True
 
 
 def print_success(msg):
@@ -129,7 +128,6 @@ def process_timeout(signum, frame):
   msg = 'process timeout ' + str(signum) + ' ' + str(frame)
   log_thread = threading.Thread(target=log_write, args=[msg])
   log_thread.start()
-  log_listener_check = True
   raise TimeoutError
 
 
