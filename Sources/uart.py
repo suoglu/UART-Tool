@@ -80,6 +80,7 @@ def log_write(entry):
     program_log = None
     print_raw(get_now())
     print_warn('Log is missing!\n')
+  if program_log is None:
     return
   attempts = 0
   while log_lock:
@@ -90,20 +91,19 @@ def log_write(entry):
     attempts += 1
     usleep(10)
   log_lock = True
-  if program_log is not None:
-    try:
-      log = open(str(program_log), 'a')
-      log.write(get_log_time(entry_time))
-      entry_list = str(entry).split('\n')
-      log.write(entry_list[-1].lower() + '\n')
-      log.close()
-    except Exception as log_err:
-      program_log = None
-      print_warn('Cannot keep log\n')
-      print_error(str(log_err) + '\n')
-      print_input_symbol()
-    finally:
-      log_lock = False
+  try:
+    log = open(str(program_log), 'a')
+    log.write(get_log_time(entry_time))
+    entry_list = str(entry).split('\n')
+    log.write(entry_list[-1].lower() + '\n')
+    log.close()
+  except Exception as log_err:
+    program_log = None
+    print_warn('Cannot keep log\n')
+    print_error(str(log_err) + '\n')
+    print_input_symbol()
+  finally:
+    log_lock = False
 
 
 def serial_write(send_data):
