@@ -94,7 +94,8 @@ def log_write(entry):
     try:
       log = open(str(program_log), 'a')
       log.write(get_log_time(entry_time))
-      log.write(str(entry)+'\n')
+      entry_list = str(entry).split('\n')
+      log.write(entry_list[-1].lower() + '\n')
       log.close()
     except Exception as log_err:
       program_log = None
