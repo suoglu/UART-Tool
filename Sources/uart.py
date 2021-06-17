@@ -76,6 +76,11 @@ def log_write(entry):
   global log_lock
   global log
   entry_time = datetime.now()
+  if program_log is not None and not os.path.isfile(program_log):
+    program_log = None
+    print_raw(get_now())
+    print_warn('Log is missing!\n')
+    return
   attempts = 0
   while log_lock:
     if attempts == 100:
@@ -87,7 +92,7 @@ def log_write(entry):
   log_lock = True
   if program_log is not None:
     try:
-      log = open(program_log, 'a')
+      log = open(str(program_log), 'a')
       log.write(get_log_time(entry_time))
       log.write(str(entry)+'\n')
       log.close()
