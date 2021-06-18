@@ -621,8 +621,6 @@ if __name__ == '__main__':
 
   while True:  #main loop for send
     try:
-      # if not listener_alive:
-      # raise ChildProcessError
       signal.signal(signal.SIGALRM, check_listener)
       signal.alarm(1)
       cin = input()  #Wait for input
