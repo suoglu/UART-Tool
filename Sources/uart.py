@@ -73,7 +73,7 @@ def print_raw(msg):
 
 
 def get_log_time(entry_time):
-  return entry_time.strftime('%Y%m%d %H:%M:%f ~ ')
+  return entry_time.strftime('%Y-%m-%d %H:%M:%S,%f ~ ')
 
 
 def get_time_stamp():
@@ -631,6 +631,9 @@ if __name__ == '__main__':
       signal.alarm(1800)  #Half an hour
       cin = cin.strip()
       if cin == '':
+        print_raw(stamp)  #print timestamp
+        print_info('Nothing to do!\n', False)
+        print_input_symbol()
         continue
 
       #command handling
