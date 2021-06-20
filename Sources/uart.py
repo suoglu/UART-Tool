@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 #*-------------------------------------------*#
-#  Title       : UART Tool v1.2               #
+#  Title       : UART Tool v1.3               #
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
-#  Last Edit   : 17/06/2021                   #
+#  Last Edit   : 20/06/2021                   #
 #*-------------------------------------------*#
 #  Description : Python3 script for serial    #
 #                communication via UART       #
@@ -32,7 +32,7 @@ global log_lock
 
 #Prompt coloring
 def get_now():
-  return '\033[35m' + str(datetime.now()) + ':\033[0m'
+  return '\033[35m' + str(datetime.now()).replace('.', ',') + ':\033[0m'
 
 
 def print_error(msg, write_log=True):
@@ -584,7 +584,7 @@ if __name__ == '__main__':
 
   #Prepare program log
   try:
-    program_log = 'uart_' + start_time.strftime('%Y%m%dh%Hm%Ms%S') + '.log'
+    program_log = 'uart_' + start_time.strftime('%Y-%m-%d_%Hh%Mm%Ss') + '.log'
     log = open(program_log, 'a')
     log.write(get_log_time(start_time))
     log.write('program start\n')
@@ -1005,23 +1005,31 @@ if __name__ == '__main__':
       if prefix is not None:
         for byte in prefix:
           serial_write(byte)
-
+      multi_byte = False
+      base = ''
       if not char:
         for item in cin.split(' '):
           try:
             if item.startswith('0x'):
+              base = 'x'
               toSend = int(item[2:], 16)
             elif item.startswith('0d'):
+              base = 'd'
               toSend = int(item[2:], 10)
             elif item.startswith('0o'):
+              base = 'o'
               toSend = int(item[2:], 8)
             elif item.startswith('0b'):
+              base = 'b'
               toSend = int(item[2:], 2)
             elif bin_ow:
+              base = 'b'
               toSend = int(item, 2)
             elif dec_ow:
+              base = 'd'
               toSend = int(item, 10)
             else:
+              base = 'x'
               toSend = int(item, 16)
           except ValueError:
             error_str += (item + ' is not a valid number!')
@@ -1037,8 +1045,16 @@ if __name__ == '__main__':
             else:
               continue
           send_str += (item + ' ')
-          serial_write(toSend.to_bytes(1, 'little'))
-        cin = send_str
+          send_array = []
+          if toSend > 255:
+            multi_byte = True
+            while toSend > 255:
+              send_array.append(int(toSend % 256))
+              toSend /= 256
+          send_array.append(int(toSend))
+          for byte_num in range(len(send_array)):
+            serial_write(send_array.pop().to_bytes(1, 'little'))
+        cin = '0' + base + send_str
       else:
         serial_write(cin.encode())
 
@@ -1049,6 +1065,11 @@ if __name__ == '__main__':
       cin += '\n'
       print_raw(stamp)  #print timestamp
       print_raw('\033[33mSend:\033[0m ' + cin)
+      if multi_byte:
+        print_raw(get_now() + ' ')
+        print_warn('Does not fit in a Byte!\n')
+        print_raw(get_now() + ' ')
+        print_info('Sending multiple Bytes\n')
       if error_str != '':
         print_error(error_str+'\n')
       block_listener = True

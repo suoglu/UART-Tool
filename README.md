@@ -63,7 +63,7 @@ When `search` is given as argument, script searches for *ttyUSB*, *ttyACM* and *
 Software configurations handle how to interpret data and adds some options. Currently, implemented options (Bold for default values):
 
 * Data type: **character**, hexadecimal number, decimal number, binary number
-  * Determines how the data is interpreted. In character mode everything is displayed and received as their character value. In numeric modes, data is taken and displayed in chosen base. In this mode user can specify bases with `0x`, `0b`, `0o` and `0d`.
+  * Determines how the data is interpreted. In character mode, everything is displayed and received as their character value. In numeric modes, data is taken and displayed in chosen base. In this mode user can specify bases with `0x`, `0b`, `0o` and `0d`.
 * Safe transmit: **Disabled**
   * In numeric mode, when a non-numeric data entered stop sending.
 * Prefix: **None**
