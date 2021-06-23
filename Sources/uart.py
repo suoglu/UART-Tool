@@ -43,6 +43,14 @@ def print_error(msg, write_log=True):
     log_thread.start()
 
 
+def print_fatal(msg, write_log=True):
+  global log_listener_check
+  sys.stdout.write('\033[1;31m' + msg + '\033[0m')
+  if write_log:
+    log_thread = threading.Thread(target=log_write, args=[msg.strip('\n'), 'fatal error'])
+    log_thread.start()
+
+
 def print_success(msg, write_log=True):
   global log_listener_check
   sys.stdout.write('\033[32m' + msg + '\033[0m')
@@ -73,7 +81,7 @@ def print_raw(msg):
 
 
 def get_log_time(entry_time):
-  return entry_time.strftime('%Y-%m-%d %H:%M:%S,%f ~ ')
+  return entry_time.strftime('%Y-%m-%d %H:%M:%S,%f ')
 
 
 def get_time_stamp():
@@ -135,21 +143,25 @@ def print_input_symbol():
   sys.stdout.write('\033[32m> \033[0m')
 
 
+class ListenerControl(Exception):
+  pass
+
+
 def check_listener(signum, frame):
   global log_listener_check
   if log_listener_check:  #so that log wont be spammed with it
     log_listener_check = False
-    msg = 'listener daemon check ' + str(signum) + ' ' + str(frame)
+    msg = 'debug: listener daemon check ' + str(signum) + ' ' + str(frame)
     log_thread = threading.Thread(target=log_write, args=[msg])
     log_thread.start()
-  raise TimeoutError
+  raise ListenerControl
 
 
 def process_timeout(signum, frame):
   global log_listener_check
-  print_warn('Timeout!\n')
-  msg = 'process timeout ' + str(signum) + ' ' + str(frame)
-  log_thread = threading.Thread(target=log_write, args=[msg])
+  print_fatal('Timeout!\n', False)
+  msg = 'fatal error: process timeout ' + str(signum) + ' ' + str(frame)
+  log_thread = threading.Thread(target=log_write, args=[msg, 'error'])
   log_thread.start()
   raise TimeoutError
 
@@ -258,13 +270,13 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
           print_error('Cannot dump to file \033[0m' + dumpfile + '\033[31m!\n')
           print_error(str(dump_error) + '\n')
     except serial.SerialException:
-      print_error('\033[F\nConnection to ' + serial_path + ' lost!\n')
-      print_info('Killing daemon...\n')
+      print_fatal('\033[F\nConnection to ' + serial_path + ' lost!\n')
+      print_warn('Killing daemon...\n')
       listener_alive = False
       break
     except Exception as listener_error:
-      print_error(str(listener_error) + '\n')
-      print_info('Killing daemon...\n')
+      print_fatal(str(listener_error) + '\n')
+      print_warn('Killing daemon...\n')
       listener_alive = False
       break
 
@@ -509,11 +521,11 @@ if __name__ == '__main__':
         uart_conn = Serial(serial_path, baud, timeout=1)
         uart_conn.close()
       except serial.SerialException:
-        print_error('\nCannot open ' + serial_path)
+        print_fatal('\nCannot open ' + serial_path)
         print_info('\nExiting...\n')
         sys.exit(1)
       except Exception as dev_err:
-        print_error(str(dev_err) + '\n')
+        print_fatal(str(dev_err) + '\n')
         print_info('\nExiting...\n')
         sys.exit(1)
     else:
@@ -530,7 +542,7 @@ if __name__ == '__main__':
       except serial.SerialException:
         continue
       except Exception as dev_err:
-        print_error(str(dev_err) + '\n')
+        print_fatal(str(dev_err) + '\n')
         print_info('\nExiting...\n')
         sys.exit(1)
   if serial_path == '/dev/ttyUSB':
@@ -544,7 +556,7 @@ if __name__ == '__main__':
       except serial.SerialException:
         continue
       except Exception as dev_err:
-        print_error(str(dev_err) + '\n')
+        print_fatal(str(dev_err) + '\n')
         print_info('\nExiting...\n')
         sys.exit(1)
   if serial_path == '/dev/ttyACM':
@@ -559,11 +571,11 @@ if __name__ == '__main__':
       except serial.SerialException:
         continue
       except Exception as dev_err:
-        print_error(str(dev_err) + '\n')
+        print_fatal(str(dev_err) + '\n')
         print_info('\nExiting...\n')
         sys.exit(1)
   if serial_path == '/dev/ttyCOM':
-    print_error('\nCannot find any devices, exiting...\n')
+    print_fatal('\nCannot find any devices, exiting...\n')
     sys.exit(1)
 
   #Software Configurations
@@ -587,9 +599,9 @@ if __name__ == '__main__':
     program_log = 'uart_' + start_time.strftime('%Y-%m-%d_%Hh%Mm%Ss') + '.log'
     log = open(program_log, 'a')
     log.write(get_log_time(start_time))
-    log.write('program start\n')
+    log.write('debug: program start\n')
     log.write(get_log_time(datetime.now()))
-    log.write('log start\n')
+    log.write('debug: log start\n')
     log.close()
   except Exception as e:
     program_log = None
@@ -603,7 +615,7 @@ if __name__ == '__main__':
   try:
     uart_conn = Serial(serial_path, baud, data_size, par, stop_size)
   except Exception as e:
-    print_error(str(e) + '\n')
+    print_fatal(str(e) + '\n')
     sys.exit(2)
 
   #Set up listener daemon
@@ -611,7 +623,7 @@ if __name__ == '__main__':
     listener_daemon = threading.Thread(target=uart_listener, daemon=True)
     listener_daemon.start()
   except Exception as e:
-    print_error(str(e) + '\n')
+    print_fatal(str(e) + '\n')
     sys.exit(4)
 
   listener_alive = True
@@ -1076,20 +1088,22 @@ if __name__ == '__main__':
       print_input_symbol()
 
     except serial.SerialException:
-      print_error('Connection to ' + serial_path + ' lost!\nExiting...\n')
+      print_fatal('Connection to ' + serial_path + ' lost!\nExiting...\n')
       sys.exit(2)
     except KeyboardInterrupt:
       print_warn('\nUser Interrupt\n')
       break
-    except TimeoutError:
+    except ListenerControl:
       if listener_alive:
         continue
       else:
-        print_warn('Daemon is killed!\n')
+        print_error('Daemon is dead!\n')
         print_info('Exiting...\n')
         sys.exit(2)
+    except TimeoutError:
+        sys.exit(2)
     except Exception as e:
-      print_error(str(e) + '\n')
+      print_fatal(str(e) + '\n')
       print_info('Exiting...\n')
       break
 
