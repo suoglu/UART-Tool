@@ -27,7 +27,7 @@ When the tool is run, it polls for a serial device. First it searches for a *tty
 
 Arguments can be given to change UART configurations. These can only be given during the [script](Sources/uart.py) call.
 
-After initialization, user can enter data or issue commands. Anything that starts with a single `\` considered a command, everything else data. To send a `\`, `\\` should be entered. Data can be entered as a character or a number of different bases. 
+After initialization, user can enter data or issue commands. Anything that starts with a single `\` considered a command, everything else data. To send a `\`, `\\` should be entered. Data can be entered as a character or a number of different bases.
 
 When the connection is lost, script automatically exits. User can also exit via exit commands or by keyboard interrupt.
 
@@ -35,11 +35,11 @@ When the connection is lost, script automatically exits. User can also exit via 
 
 User can change UART configurations via arguments when calling the [script](Sources/uart.py). Default configurations for the UART is 8-bit data with no parity and 1 stop bit; and baud rate set to 115.2k.
 
-There are also helper functionalities provided with the arguments. One of these functionalities can be used at once, and script exits after doing its job. Passing `help` as an argument provides information about the script call.
+There are also helper functionalities provided with the arguments. One of these functionalities can be used at once, and script exits after doing its job. Passing `--help` as an argument provides information about the script call.
 
 ### Interactive Call
 
-One way to change UART configurations is interactive call. When `i` is passed as an argument when calling the [script](Sources/uart.py), tool is initialized in interactive mode. In this mode tool asks user for configurations. When an empty answer is given default value for asked configuration is used.
+One way to change UART configurations is interactive call. When `-i` (or `--interactive`) is passed as an argument when calling the [script](Sources/uart.py), tool is initialized in interactive mode. In this mode tool asks user for configurations. When an empty answer is given default value for asked configuration is used.
 
 ### Configuration Arguments
 
@@ -56,7 +56,7 @@ Tool also provide some helper functionality via arguments. When one of these arg
 
 ### Device Search mode
 
-When `search` is given as argument, script searches for *ttyUSB*, *ttyACM* and *ttyCOM* devices. It lists the found devices and exits.
+When `--search` (or `-s`) is given as argument, script searches for *ttyUSB*, *ttyACM* and *ttyCOM* devices. It lists the found devices and exits.
 
 ## Software configurations
 

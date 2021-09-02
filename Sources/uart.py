@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 #*-------------------------------------------*#
-#  Title       : UART Tool v1.3               #
+#  Title       : UART Tool v1.3.1             #
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
-#  Last Edit   : 20/06/2021                   #
+#  Last Edit   : 02/09/2021                   #
 #*-------------------------------------------*#
 #  Description : Python3 script for serial    #
 #                communication via UART       #
@@ -286,7 +286,7 @@ if __name__ == '__main__':
   start_time = datetime.now()
   program_log = None
   log_lock = False
-  print_info('Welcome to the UART tool v1.2!\n')
+  print_info('Welcome to the UART tool v1.3.1!\n')
   baud = 115200
   serial_path = '/dev/ttyUSB'
   data_size = serial.EIGHTBITS
@@ -295,287 +295,296 @@ if __name__ == '__main__':
   par_str = 'no'
   search_range = 10
   #check arguments for custom settings
-  while len(sys.argv) > 1:
-    current = sys.argv.pop(-1)
-    current = current.strip()
-    if current.isnumeric() or current == '1.5' or current == '1,5':
-      if current == '1,5':
-        current = 1.5
-      else:
-        current = float(current)
-      if 20 > current > 10:
-        search_range = int(current)
-      elif current == 8:
-        data_size = serial.EIGHTBITS
-      elif current == 7:
-        data_size = serial.SEVENBITS
-      elif current == 6:
-        data_size = serial.SIXBITS
-      elif current == 5:
-        data_size = serial.FIVEBITS
-      elif current == 2:
-        stop_size = serial.STOPBITS_TWO
-      elif current == 1.5:
-        stop_size = serial.STOPBITS_ONE_POINT_FIVE
-      elif current == 1:
-        stop_size = serial.STOPBITS_ONE
-      elif current > 1999:
-        baud = int(current)
-    elif current.casefold() == 'even' or current.casefold() == 'e':
-      par = serial.PARITY_EVEN
-      par_str = 'even'
-    elif current.casefold() == 'odd' or current.casefold() == 'o':
-      par = serial.PARITY_ODD
-      par_str = 'odd'
-    elif current.casefold() == 'mark' or current.casefold() == 'm':
-      par = serial.PARITY_MARK
-      par_str = 'mark'
-    elif current.casefold() == 'space' or current.casefold() == 's':
-      par = serial.PARITY_SPACE
-      par_str = 'space'
-    elif current.casefold() == 'no' or current.casefold() == 'n':
-      continue
-    elif current.casefold() == 'help':
-      print('\033[FUsage: uart.py [arg]                  ')
-      print_info(' Arguments can be the uart configurations or one of the following commands:\n\n')
-      print_info('   ~ i      : interactive start up, tool asks for uart configurations\n')
-      print_info('   ~ help   : Print this message\n')
-      print_info('   ~ search : Search for connected devices\n')
-      print_info('\n Uart configurations can be given in any order\n')
-      sys.exit(0)
-    elif current.casefold() == 'i':
-      print_info('\nInteractive configuration mode\nLeave empty for default values\n\n')
-      while True:  #ask baud rate
-        cin = str(input('Baud rate: '))
-        cin = cin.strip()
-        if cin == '':
-          print_raw('\033[FBaud rate: ')
-          print_info(str(baud) + '\n')
-          break
-        if not cin.isnumeric():
-          print_warn('Baud rate must be an integer!\n')
-          continue
-        cin = int(cin)
-        if cin > 1199:
-          baud = cin
-          break
+  try:
+    while len(sys.argv) > 1:
+      current = sys.argv.pop(-1)
+      current = current.strip()
+      if current.isnumeric() or current == '1.5' or current == '1,5':
+        if current == '1,5':
+          current = 1.5
         else:
-          print_warn('Minimum baud rate should be 1.2k\n')
-      while True:  #ask data size
-        cin = str(input('Data size: '))
-        cin = cin.strip()
-        if cin == '':
-          print_raw('\033[FData size: ')
-          print_info(str(data_size) + '\n')
-          break
-        if not cin.isnumeric():
-          print_warn('Data size must be an integer!\n')
-          continue
-        cin = int(cin)
-        if 4 < cin < 9:
-          data_size = cin
-          break
-        else:
-          print_warn('Data size should be either 5, 6, 7 or 8\n')
-      while True:  #ask parity
-        cin = str(input('Parity: '))
-        cin = cin.strip()
-        if cin == '':
-          print_raw('\033[FParity: ')
-          print_info(par + '\n')
-          break
-        if cin.casefold() == 'odd' or cin.casefold() == 'o':
-          par = serial.PARITY_ODD
-          par_str = 'odd'
-          break
-        elif cin.casefold() == 'even' or cin.casefold() == 'e':
-          par = serial.PARITY_EVEN
-          par_str = 'even'
-          break
-        elif cin.casefold() == 'mark' or cin.casefold() == 'm':
-          par = serial.PARITY_MARK
-          par_str = 'mark'
-          break
-        elif cin.casefold() == 'space' or cin.casefold() == 's':
-          par = serial.PARITY_SPACE
-          par_str = 'space'
-          break
-        elif cin.casefold() == 'none' or cin.casefold() == 'n' or cin.casefold() == 'no':
-          break
-        else:
-          print_warn('Parity should be odd, even, mark, space or none\n')
-      while True:  #ask stop bit
-        cin = str(input('Stop bit size: '))
-        cin = cin.strip()
-        if cin == '':
-          print_raw('\033[FStop bit size: ')
-          print_info(str(stop_size) + '\n')
-          break
-        try:
-          cin = float(cin)
-        except ValueError:
-          print_warn('Stop bit size must be a float!\n')
-          continue
-        except Exception as config_error:
-          print_error(str(config_error)+'\n')
-          continue
-        if cin == 1 or cin == 2:
-          stop_size = cin
-          break
-        elif cin == 1.5:
+          current = float(current)
+        if 20 > current > 10:
+          search_range = int(current)
+        elif current == 8:
+          data_size = serial.EIGHTBITS
+        elif current == 7:
+          data_size = serial.SEVENBITS
+        elif current == 6:
+          data_size = serial.SIXBITS
+        elif current == 5:
+          data_size = serial.FIVEBITS
+        elif current == 2:
+          stop_size = serial.STOPBITS_TWO
+        elif current == 1.5:
           stop_size = serial.STOPBITS_ONE_POINT_FIVE
-          break
-        else:
-          print_warn('Stop bit size should be either 1, 1.5 or 2\n')
-      if serial_path == '/dev/ttyUSB':
-        while True:  #ask serial path
-          cin = str(input('Device: '))
+        elif current == 1:
+          stop_size = serial.STOPBITS_ONE
+        elif current > 1999:
+          baud = int(current)
+      elif current.casefold() == 'even' or current.casefold() == 'e':
+        par = serial.PARITY_EVEN
+        par_str = 'even'
+      elif current.casefold() == 'odd' or current.casefold() == 'o':
+        par = serial.PARITY_ODD
+        par_str = 'odd'
+      elif current.casefold() == 'mark' or current.casefold() == 'm':
+        par = serial.PARITY_MARK
+        par_str = 'mark'
+      elif current.casefold() == 'space' or current.casefold() == 's':
+        par = serial.PARITY_SPACE
+        par_str = 'space'
+      elif current.casefold() == 'no' or current.casefold() == 'n':
+        continue
+      elif current.casefold().strip('--') == 'help' or current.casefold() == '-h':
+        print('\033[FUsage: uart.py [arg]                  ')
+        print_info(' Arguments can be the uart configurations or one of the following commands:\n\n')
+        print_info('  --interactive (-i): interactive start up, tool asks for uart configurations\n')
+        print_info('  --help        (-h): Print this message\n')
+        print_info('  --search      (-s): Search for connected devices\n')
+        print_info('\n Uart configurations can be given in any order\n')
+        sys.exit(0)
+      elif current.casefold() == '-i' or current.casefold().strip('--') == 'interactive':
+        print_info('\nInteractive configuration mode\nLeave empty for default values\n\n')
+        while True:  #ask baud rate
+          cin = str(input('Baud rate: '))
           cin = cin.strip()
           if cin == '':
-            print_raw('\033[FDevice: ')
-            print_info('Search\n')
+            print_raw('\033[FBaud rate: ')
+            print_info(str(baud) + '\n')
             break
-          if not cin.startswith('tty'):
-            print_warn('Device name should start with tty\n')
+          if not cin.isnumeric():
+            print_warn('Baud rate must be an integer!\n')
             continue
-          try:
-            try_path = '/dev/' + cin
-            uart = Serial(try_path, timeout=1)
-            uart.close()
-            serial_path = try_path
+          cin = int(cin)
+          if cin > 1199:
+            baud = cin
             break
-          except serial.SerialException:
-            print_error('Cannot connect to device \033[0m' + cin + '\033[31m!\n')
-          except Exception as conn_error:
-            print_error(str(conn_error) + '\n')
-    elif current.casefold() == 'search':
-      print_info('\nSearching for connected devices...\n')
-      found_dev = 0
-      non_res_dev = 0
-      poll_path = '/dev/ttyUSB'
-      for i in range(search_range + 1):
-        current = poll_path + str(i)
-        if os.path.exists(current):
+          else:
+            print_warn('Minimum baud rate should be 1.2k\n')
+        while True:  #ask data size
+          cin = str(input('Data size: '))
+          cin = cin.strip()
+          if cin == '':
+            print_raw('\033[FData size: ')
+            print_info(str(data_size) + '\n')
+            break
+          if not cin.isnumeric():
+            print_warn('Data size must be an integer!\n')
+            continue
+          cin = int(cin)
+          if 4 < cin < 9:
+            data_size = cin
+            break
+          else:
+            print_warn('Data size should be either 5, 6, 7 or 8\n')
+        while True:  #ask parity
+          cin = str(input('Parity: '))
+          cin = cin.strip()
+          if cin == '':
+            print_raw('\033[FParity: ')
+            print_info(par + '\n')
+            break
+          if cin.casefold() == 'odd' or cin.casefold() == 'o':
+            par = serial.PARITY_ODD
+            par_str = 'odd'
+            break
+          elif cin.casefold() == 'even' or cin.casefold() == 'e':
+            par = serial.PARITY_EVEN
+            par_str = 'even'
+            break
+          elif cin.casefold() == 'mark' or cin.casefold() == 'm':
+            par = serial.PARITY_MARK
+            par_str = 'mark'
+            break
+          elif cin.casefold() == 'space' or cin.casefold() == 's':
+            par = serial.PARITY_SPACE
+            par_str = 'space'
+            break
+          elif cin.casefold() == 'none' or cin.casefold() == 'n' or cin.casefold() == 'no':
+            break
+          else:
+            print_warn('Parity should be odd, even, mark, space or none\n')
+        while True:  #ask stop bit
+          cin = str(input('Stop bit size: '))
+          cin = cin.strip()
+          if cin == '':
+            print_raw('\033[FStop bit size: ')
+            print_info(str(stop_size) + '\n')
+            break
           try:
-            uart_conn = Serial(current, timeout=1)
-            uart_conn.close()
-            print_success('\nFound ttyUSB' + str(i))
-            found_dev += 1
-          except serial.SerialException:
-            print_warn('\nFound ttyUSB' + str(i) + ', but cannot connect!')
-            non_res_dev += 1
-          except Exception as search_err:
-            print_warn(str(search_err)+'\n')
-            print_info('Ignoring...\n')
-      poll_path = '/dev/ttyACM'
-      for i in range(search_range + 1):
-        current = poll_path + str(i)
-        if os.path.exists(current):
-          try:
-            uart_conn = Serial(current, timeout=1)
-            uart_conn.close()
-            print_success('\nFound ttyACM' + str(i))
-            found_dev += 1
-          except serial.SerialException:
-            print_warn('\nFound ttyACM' + str(i) + ', but cannot connect!')
-            non_res_dev += 1
-          except Exception as search_err:
-            print_warn(str(search_err)+'\n')
-            print_info('Ignoring...\n')
-      poll_path = '/dev/ttyCOM'
-      for i in range(search_range + 1):
-        current = poll_path + str(i)
-        if os.path.exists(current):
-          try:
-            uart_conn = Serial(current, timeout=1)
-            uart_conn.close()
-            print_success('\nFound ttyCOM' + str(i) + '\n')
-            found_dev += 1
-          except serial.SerialException:
-            print_warn('\nFound ttyCOM' + str(i) + ', but cannot connect!')
-            non_res_dev += 1
-          except Exception as search_err:
-            print_warn(str(search_err)+'\n')
-            print_info('Ignoring...\n')
-      print_raw('\n\n')
-      if found_dev != 0:
-        print_success('Found ')
-        print_raw(str(found_dev))
-        if found_dev == 1:
-          print_success(' device!\n')
-        else:
-          print_success(' devices!\n')
-      if non_res_dev != 0:
-        print_warn('Found ')
-        print_raw(str(non_res_dev))
-        if non_res_dev == 1:
-          print_success(' device, but cannot connect to it!\n!\n')
-        else:
-          print_success(' devices, but cannot connect to them!\n!\n')
-      if non_res_dev == 0 and found_dev == 0:
-        print_error('Cannot find any devices!\n')
-      sys.exit(0)
-    elif current.startswith('tty'):
-      serial_path = '/dev/' + current
-      try:
-        uart_conn = Serial(serial_path, baud, timeout=1)
-        uart_conn.close()
-      except serial.SerialException:
-        print_fatal('\nCannot open ' + serial_path)
-        print_info('\nExiting...\n')
-        sys.exit(1)
-      except Exception as dev_err:
-        print_fatal(str(dev_err) + '\n')
-        print_info('\nExiting...\n')
-        sys.exit(1)
-    else:
-      print_warn('\nInvalid argument:' + current)
-      print_info('\nSkipping...\n')
+            cin = float(cin)
+          except ValueError:
+            print_warn('Stop bit size must be a float!\n')
+            continue
+          except Exception as config_error:
+            print_error(str(config_error)+'\n')
+            continue
+          if cin == 1 or cin == 2:
+            stop_size = cin
+            break
+          elif cin == 1.5:
+            stop_size = serial.STOPBITS_ONE_POINT_FIVE
+            break
+          else:
+            print_warn('Stop bit size should be either 1, 1.5 or 2\n')
+        if serial_path == '/dev/ttyUSB':
+          while True:  #ask serial path
+            cin = str(input('Device: '))
+            cin = cin.strip()
+            if cin == '':
+              print_raw('\033[FDevice: ')
+              print_info('Search\n')
+              break
+            if not cin.startswith('tty'):
+              print_warn('Device name should start with tty\n')
+              continue
+            try:
+              try_path = '/dev/' + cin
+              uart = Serial(try_path, timeout=1)
+              uart.close()
+              serial_path = try_path
+              break
+            except serial.SerialException:
+              print_error('Cannot connect to device \033[0m' + cin + '\033[31m!\n')
+            except Exception as conn_error:
+              print_error(str(conn_error) + '\n')
+      elif current.casefold().strip('--') == 'search' or current.casefold() == '-s':
+        print_info('\nSearching for connected devices...\n')
+        found_dev = 0
+        non_res_dev = 0
+        poll_path = '/dev/ttyUSB'
+        for i in range(search_range + 1):
+          current = poll_path + str(i)
+          if os.path.exists(current):
+            try:
+              uart_conn = Serial(current, timeout=1)
+              uart_conn.close()
+              print_success('\nFound ttyUSB' + str(i))
+              found_dev += 1
+            except serial.SerialException:
+              print_warn('\nFound ttyUSB' + str(i) + ', but cannot connect!')
+              non_res_dev += 1
+            except Exception as search_err:
+              print_warn(str(search_err)+'\n')
+              print_info('Ignoring...\n')
+        poll_path = '/dev/ttyACM'
+        for i in range(search_range + 1):
+          current = poll_path + str(i)
+          if os.path.exists(current):
+            try:
+              uart_conn = Serial(current, timeout=1)
+              uart_conn.close()
+              print_success('\nFound ttyACM' + str(i))
+              found_dev += 1
+            except serial.SerialException:
+              print_warn('\nFound ttyACM' + str(i) + ', but cannot connect!')
+              non_res_dev += 1
+            except Exception as search_err:
+              print_warn(str(search_err)+'\n')
+              print_info('Ignoring...\n')
+        poll_path = '/dev/ttyCOM'
+        for i in range(search_range + 1):
+          current = poll_path + str(i)
+          if os.path.exists(current):
+            try:
+              uart_conn = Serial(current, timeout=1)
+              uart_conn.close()
+              print_success('\nFound ttyCOM' + str(i) + '\n')
+              found_dev += 1
+            except serial.SerialException:
+              print_warn('\nFound ttyCOM' + str(i) + ', but cannot connect!')
+              non_res_dev += 1
+            except Exception as search_err:
+              print_warn(str(search_err)+'\n')
+              print_info('Ignoring...\n')
+        print_raw('\n\n')
+        if found_dev != 0:
+          print_success('Found ')
+          print_raw(str(found_dev))
+          if found_dev == 1:
+            print_success(' device!\n')
+          else:
+            print_success(' devices!\n')
+        if non_res_dev != 0:
+          print_warn('Found ')
+          print_raw(str(non_res_dev))
+          if non_res_dev == 1:
+            print_success(' device, but cannot connect to it!\n!\n')
+          else:
+            print_success(' devices, but cannot connect to them!\n!\n')
+        if non_res_dev == 0 and found_dev == 0:
+          print_error('Cannot find any devices!\n')
+        sys.exit(0)
+      elif current.startswith('tty'):
+        serial_path = '/dev/' + current
+        try:
+          uart_conn = Serial(serial_path, baud, timeout=1)
+          uart_conn.close()
+        except serial.SerialException:
+          print_fatal('\nCannot open ' + serial_path)
+          print_info('\nExiting...\n')
+          sys.exit(1)
+        except Exception as dev_err:
+          print_fatal(str(dev_err) + '\n')
+          print_info('\nExiting...\n')
+          sys.exit(1)
+      else:
+        print_warn('\nInvalid argument:' + current)
+        print_info('\nSkipping...\n')
 
-  if serial_path == '/dev/ttyUSB':  #if no device is given, poll for it
-    for i in range(search_range + 1):
-      current = serial_path + str(i)
-      try:
-        uart_conn = Serial(current, baud, timeout=1)
-        uart_conn.close()
-        serial_path = current
-      except serial.SerialException:
-        continue
-      except Exception as dev_err:
-        print_fatal(str(dev_err) + '\n')
-        print_info('\nExiting...\n')
-        sys.exit(1)
-  if serial_path == '/dev/ttyUSB':
-    serial_path = '/dev/ttyACM'
-    for i in range(search_range + 1):
-      current = serial_path + str(i)
-      try:
-        uart_conn = Serial(current, baud, timeout=1)
-        uart_conn.close()
-        serial_path = current
-      except serial.SerialException:
-        continue
-      except Exception as dev_err:
-        print_fatal(str(dev_err) + '\n')
-        print_info('\nExiting...\n')
-        sys.exit(1)
-  if serial_path == '/dev/ttyACM':
-    serial_path = '/dev/ttyCOM'
-    current = ''
-    for i in range(search_range + 1):
-      current = serial_path + str(i)
-      try:
-        uart_conn = Serial(current, baud, timeout=1)
-        uart_conn.close()
-        serial_path = current
-      except serial.SerialException:
-        continue
-      except Exception as dev_err:
-        print_fatal(str(dev_err) + '\n')
-        print_info('\nExiting...\n')
-        sys.exit(1)
-  if serial_path == '/dev/ttyCOM':
-    print_fatal('\nCannot find any devices, exiting...\n')
+    if serial_path == '/dev/ttyUSB':  #if no device is given, poll for it
+      for i in range(search_range + 1):
+        current = serial_path + str(i)
+        try:
+          uart_conn = Serial(current, baud, timeout=1)
+          uart_conn.close()
+          serial_path = current
+        except serial.SerialException:
+          continue
+        except Exception as dev_err:
+          print_fatal(str(dev_err) + '\n')
+          print_info('\nExiting...\n')
+          sys.exit(1)
+    if serial_path == '/dev/ttyUSB':
+      serial_path = '/dev/ttyACM'
+      for i in range(search_range + 1):
+        current = serial_path + str(i)
+        try:
+          uart_conn = Serial(current, baud, timeout=1)
+          uart_conn.close()
+          serial_path = current
+        except serial.SerialException:
+          continue
+        except Exception as dev_err:
+          print_fatal(str(dev_err) + '\n')
+          print_info('\nExiting...\n')
+          sys.exit(1)
+    if serial_path == '/dev/ttyACM':
+      serial_path = '/dev/ttyCOM'
+      current = ''
+      for i in range(search_range + 1):
+        current = serial_path + str(i)
+        try:
+          uart_conn = Serial(current, baud, timeout=1)
+          uart_conn.close()
+          serial_path = current
+        except serial.SerialException:
+          continue
+        except Exception as dev_err:
+          print_fatal(str(dev_err) + '\n')
+          print_info('\nExiting...\n')
+          sys.exit(1)
+    if serial_path == '/dev/ttyCOM':
+      print_fatal('\nCannot find any devices, exiting...\n')
+      sys.exit(1)
+  except KeyboardInterrupt:
+    print_warn('\nInterrupted by user\n')
+    print_info('\nExiting...\n')
+    sys.exit(1)
+  except Exception as arg_err:
+    print_fatal('\n' + str(arg_err) + '\n')
+    print_info('\nExiting...\n')
     sys.exit(1)
 
   #Software Configurations
@@ -1091,7 +1100,7 @@ if __name__ == '__main__':
       print_fatal('Connection to ' + serial_path + ' lost!\nExiting...\n')
       sys.exit(2)
     except KeyboardInterrupt:
-      print_warn('\nUser Interrupt\n')
+      print_warn('Interrupted by user\n')
       break
     except ListenerControl:
       if listener_alive:
