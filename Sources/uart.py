@@ -1024,6 +1024,7 @@ if __name__ == '__main__':
           block_listener = True
           print_input_symbol()
           continue
+
       #Data handling
       error_str = ''
       send_str = ''
@@ -1033,8 +1034,32 @@ if __name__ == '__main__':
         for byte in prefix:
           serial_write(byte)
       multi_byte = False
+
       if not char:
         cin = cin.replace('_', '').replace('\'', '')
+        base = None
+        #if input is to large divide it into bytes
+        if len(cin) > 8:
+          if cin.startswith('0x'):
+            base = 'x'
+          elif cin.startswith('0d'):
+            base = 'd'
+          elif cin.startswith('0o'):
+            base = 'o'
+          elif cin.startswith('0b'):
+            base = 'b'
+          if base is not None:
+            cin = cin[2:]
+          if len(cin) % 2 == 1:  #make sure always multiple of Byte
+            cin = '0' + cin
+          toSend = 0  #use as a buffer
+          cin_temp = ''
+          for half_byte in cin:
+            if base is not None and toSend == 0:
+              cin_temp += ' 0' + base
+            cin_temp += half_byte
+            toSend = (toSend + 1) % 2
+          cin = cin_temp.strip()
         for item in cin.split(' '):
           try:
             if item.startswith('0x'):
