@@ -1032,25 +1032,18 @@ if __name__ == '__main__':
         for item in cin.split(' '):
           try:
             if item.startswith('0x'):
-              base = 'x'
               toSend = int(item[2:], 16)
             elif item.startswith('0d'):
-              base = 'd'
               toSend = int(item[2:], 10)
             elif item.startswith('0o'):
-              base = 'o'
               toSend = int(item[2:], 8)
             elif item.startswith('0b'):
-              base = 'b'
               toSend = int(item[2:], 2)
             elif bin_ow:
-              base = 'b'
               toSend = int(item, 2)
             elif dec_ow:
-              base = 'd'
               toSend = int(item, 10)
             else:
-              base = 'x'
               toSend = int(item, 16)
           except ValueError:
             error_str += (item + ' is not a valid number!')
@@ -1075,14 +1068,13 @@ if __name__ == '__main__':
           send_array.append(int(toSend))
           for byte_num in range(len(send_array)):
             serial_write(send_array.pop().to_bytes(1, 'little'))
-        cin = '0' + base + send_str
+        cin = send_str
       else:
         serial_write(cin.encode())
 
       if suffix is not None:
         for byte in suffix:
           serial_write(byte)
-
       cin += '\n'
       print_raw(stamp)  #print timestamp
       print_raw('\033[33mSend:\033[0m ' + cin)
