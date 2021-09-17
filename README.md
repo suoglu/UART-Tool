@@ -108,6 +108,7 @@ Commands allow user to change software configurations and interact with the scri
 |`suff [data]`|-|Add bytes to suffix, data should be given as hexadecimal|
 |`unmute`|-|Show received data on terminal|
 |`unsafe`|-|Disable safe transmit mode|
+|`@`|-|Print the path to the connected device|
 
 ## Dependencies
 

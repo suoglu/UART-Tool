@@ -195,6 +195,7 @@ def print_help():
   print_raw('   ~ \\suff    : add bytes to send after transmitted data, arguments should be given as hexadecimal\n')
   print_raw('   ~ \\unmute  : print received received to terminal\n')
   print_raw('   ~ \\unsafe  : in non char mode, do not stop sending if non number given\n')
+  print_raw('   ~ \\@       : print the path to the connected device\n')
   print_raw('\n  Marked commands can be called with their first letter\n')
 
 
@@ -733,6 +734,11 @@ if __name__ == '__main__':
         bin_ow = True
         hex_add = True
         print_input_symbol()
+        continue
+      elif cin == '\\@':
+        print_raw(stamp)  #print timestamp
+        print_info('Connected to: ')
+        print_raw(serial_path + '\n')
         continue
       elif cin == '\\keeplog':
         print_raw(stamp)  #print timestamp
