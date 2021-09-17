@@ -110,6 +110,8 @@ Commands allow user to change software configurations and interact with the scri
 |`unsafe`|-|Disable safe transmit mode|
 |`@`|-|Print the path to the connected device|
 
+When using numeric modes, following characters can be used as separators: `_`,  `'`
+
 ## Dependencies
 
 Script [uart.py](Sources/uart.py) uses *sys*, *pyserial*, *threading*, *time*, *datetime*, *os*, *random* and *signal* modules, and tested with Python 3.8.6 on Pop!_OS 20.10

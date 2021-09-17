@@ -1033,8 +1033,8 @@ if __name__ == '__main__':
         for byte in prefix:
           serial_write(byte)
       multi_byte = False
-      base = ''
       if not char:
+        cin = cin.replace('_', '').replace('\'', '')
         for item in cin.split(' '):
           try:
             if item.startswith('0x'):
