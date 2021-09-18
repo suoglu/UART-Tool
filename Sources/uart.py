@@ -737,8 +737,8 @@ if __name__ == '__main__':
         continue
       elif cin == '\\@':
         print_raw(stamp)  #print timestamp
-        print_info('Connected to: ')
-        print_raw(serial_path + '\n')
+        print_info('Connected to: \033[0m' + serial_path + '\n')
+        print_input_symbol()
         continue
       elif cin == '\\keeplog':
         print_raw(stamp)  #print timestamp
