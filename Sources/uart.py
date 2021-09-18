@@ -1040,6 +1040,7 @@ if __name__ == '__main__':
         base = None
         #if input is to large divide it into bytes
         if len(cin) > 8:
+          multi_byte = True
           if cin.startswith('0x'):
             base = 'x'
           elif cin.startswith('0d'):
