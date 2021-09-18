@@ -1039,7 +1039,7 @@ if __name__ == '__main__':
         cin = cin.replace('_', '').replace('\'', '')
         base = None
         #if input is to large divide it into bytes
-        if len(cin) > 8:
+        if len(cin) > 2:
           multi_byte = True
           if cin.startswith('0x'):
             base = 'x'
@@ -1096,7 +1096,7 @@ if __name__ == '__main__':
             multi_byte = True
             while toSend > 255:
               send_array.append(int(toSend % 256))
-              toSend /= 256
+              toSend = int(toSend / 256)
           send_array.append(int(toSend))
           for byte_num in range(len(send_array)):
             serial_write(send_array.pop().to_bytes(1, 'little'))
