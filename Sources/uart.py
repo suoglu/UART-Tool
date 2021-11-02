@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #*-------------------------------------------*#
-#  Title       : UART Tool v1.3.1             #
+#  Title       : UART Tool v1.4               #
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
@@ -287,7 +287,7 @@ if __name__ == '__main__':
   start_time = datetime.now()
   program_log = None
   log_lock = False
-  print_info('Welcome to the UART tool v1.3.1!\n')
+  print_info('Welcome to the UART tool v1.4!\n')
   baud = 115200
   serial_path = '/dev/ttyUSB'
   data_size = serial.EIGHTBITS
@@ -590,7 +590,7 @@ if __name__ == '__main__':
 
   #Software Configurations
   global block_listener
-  char = True
+  char = False
   dec_ow = False
   bin_ow = False
   hex_add = False
@@ -1026,7 +1026,6 @@ if __name__ == '__main__':
           continue
 
       #Data handling
-      error_str = ''
       send_str = ''
       toSend = 0
 
@@ -1035,31 +1034,91 @@ if __name__ == '__main__':
           serial_write(byte)
 
       if not char:
-        cin = cin.replace('_', '').replace('\'', '')
-        base = None
-        #if input is to large divide it into bytes
-        if len(cin) > 2:
-          if cin.startswith('0x'):
+        cin = cin.replace('_', '').replace('\'', '').strip()
+        #if input is to large divide it into single transfers
+        cin_temp = ''
+        cin_org = cin
+        for item in cin.split(' '):
+          base = None
+          current_item = ''
+          if item.startswith('0x'):
             base = 'x'
-          elif cin.startswith('0d'):
+          elif item.startswith('0d'):
             base = 'd'
-          elif cin.startswith('0o'):
+          elif item.startswith('0o'):
             base = 'o'
-          elif cin.startswith('0b'):
+          elif item.startswith('0b'):
             base = 'b'
           if base is not None:
-            cin = cin[2:]
-          if len(cin) % 2 == 1:  #make sure always multiple of Byte
-            cin = '0' + cin
-          toSend = 0  #use as a buffer
-          cin_temp = ''
-          for half_byte in cin:
-            if base is not None and toSend == 0:
-              cin_temp += ' 0' + base
-            cin_temp += half_byte
-            toSend = (toSend + 1) % 2
-          cin = cin_temp.strip()
+            item = item[2:]
+          else:
+            if bin_ow:
+              base = 'b'
+            elif dec_ow:
+              base = 'd'
+            else:
+              base = 'x'
+          #seperate according to base
+          max_data = 0
+          if data_size == serial.EIGHTBITS:
+            max_data = 256
+          elif data_size == serial.SEVENBITS:
+            max_data = 128
+          elif data_size == serial.SIXBITS:
+            max_data = 64
+          else:
+            max_data = 32
+          try:
+            item_int = 0
+            if base == 'x':
+              item_int = int(item, 16)
+              while item_int > (max_data - 1):
+                current_item = ' ' + hex(int(item_int % max_data)) + current_item
+                item_int = int(item_int / max_data)
+              if item_int != 0:
+                current_item = ' ' + hex(int(item_int % max_data)) + current_item
+            elif base == 'd':
+              item_int = int(item, 10)
+              while item_int > (max_data-1):
+                current_item = ' 0d' + str(int(item_int % max_data)) + current_item
+                item_int = int(item_int / max_data)
+              if item_int != 0:
+                current_item = ' 0d' + str(int(item_int % max_data)) + current_item
+            elif base == 'o':
+              item_int = int(item, 8)
+              while item_int > (max_data - 1):
+                current_item = ' ' + oct(int(item_int % max_data)) + current_item
+                item_int = int(item_int / max_data)
+              if item_int != 0:
+                current_item = ' ' + oct(int(item_int % max_data)) + current_item
+            else:
+              item_int = int(item, 2)
+              while item_int > (max_data - 1):
+                current_item = ' ' + bin(int(item_int % max_data)) + current_item
+                item_int = int(item_int / max_data)
+              if item_int != 0:
+                current_item = ' ' + bin(int(item_int % max_data)) + current_item
+            cin_temp += current_item
+          except ValueError:
+            print_raw(stamp)  #print timestamp
+            print_error('0' + base + item + ' is not a valid number with correct base!\n\n')
+            block_listener = True
+            if safe_tx:
+              break
+            else:
+              continue
+          except Exception as err:
+            print_error('On ' + item + ': ' + str(err)+'\n')
+            if safe_tx:
+              break
+            else:
+              continue
+        cin = cin_temp.strip()
+        toSend = 0  #use as a buffer
+        #this loop will send all buffered data
         for item in cin.split(' '):
+          if item == '':
+            continue
           try:
             if item.startswith('0x'):
               toSend = int(item[2:], 16)
@@ -1069,46 +1128,53 @@ if __name__ == '__main__':
               toSend = int(item[2:], 8)
             elif item.startswith('0b'):
               toSend = int(item[2:], 2)
-            elif bin_ow:
-              toSend = int(item, 2)
-            elif dec_ow:
-              toSend = int(item, 10)
             else:
-              toSend = int(item, 16)
-          except ValueError:
-            error_str += (item + ' is not a valid number!')
-            block_listener = True
-            if safe_tx:
+              print_raw(stamp)  #print timestamp
+              print_fatal('No base found for '+item+'! This shouldn\'t happen!')
               break
-            else:
-              continue
+          except ValueError:
+            print_raw(stamp)  #print timestamp
+            print_fatal(item+' is not a valid number with correct base! This shouldn\'t happen!')
+            break
           except Exception as err:
+            print_raw(stamp)  #print timestamp
             print_error('On '+item+': '+str(err))
             if safe_tx:
               break
             else:
               continue
-          send_str += (item + ' ')
-          send_array = []
-          if toSend > 255:
-            while toSend > 255:
-              send_array.append(int(toSend % 256))
-              toSend = int(toSend / 256)
-          send_array.append(int(toSend))
-          for byte_num in range(len(send_array)):
-            serial_write(send_array.pop().to_bytes(1, 'little'))
-        cin = send_str
+          if toSend > 255 and data_size == serial.EIGHTBITS:
+            print_raw(stamp)  #print timestamp
+            print_fatal(hex(toSend) + ' does not fit in a byte! This shouldn\'t happen!')
+            break
+          elif toSend > 127 and data_size == serial.SEVENBITS:
+            print_raw(stamp)  #print timestamp
+            print_fatal(hex(toSend) + ' does not fit in 7 bits! This shouldn\'t happen!')
+            break
+          elif toSend > 63 and data_size == serial.SIXBITS:
+            print_raw(stamp)  #print timestamp
+            print_fatal(hex(toSend) + ' does not fit in 6 bits! This shouldn\'t happen!')
+            break
+          elif toSend > 31 and data_size == serial.FIVEBITS:
+            print_raw(stamp)  #print timestamp
+            print_fatal(hex(toSend) + ' does not fit in 5 bits! This shouldn\'t happen!')
+            break
+          serial_write(toSend.to_bytes(1, 'little'))
       else:
         serial_write(cin.encode())
-
       if suffix is not None:
         for byte in suffix:
           serial_write(byte)
-      cin += '\n'
       print_raw(stamp)  #print timestamp
-      print_raw('\033[33mSend:\033[0m ' + cin)
-      if error_str != '':
-        print_error(error_str+'\n')
+      if cin != '':
+        print_raw('\033[33mSend:\033[0m ')
+        if char:
+          print_raw(cin)
+        else:
+          print_raw(cin_org + ' \033[2m(' + cin + ')\033[0m')
+        print_raw('\n')
+      else:
+        print_warn('Nothing left to send!\n')
       block_listener = True
       print_input_symbol()
 
