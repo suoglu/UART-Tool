@@ -1033,14 +1033,12 @@ if __name__ == '__main__':
       if prefix is not None:
         for byte in prefix:
           serial_write(byte)
-      multi_byte = False
 
       if not char:
         cin = cin.replace('_', '').replace('\'', '')
         base = None
         #if input is to large divide it into bytes
         if len(cin) > 2:
-          multi_byte = True
           if cin.startswith('0x'):
             base = 'x'
           elif cin.startswith('0d'):
@@ -1093,7 +1091,6 @@ if __name__ == '__main__':
           send_str += (item + ' ')
           send_array = []
           if toSend > 255:
-            multi_byte = True
             while toSend > 255:
               send_array.append(int(toSend % 256))
               toSend = int(toSend / 256)
@@ -1110,11 +1107,6 @@ if __name__ == '__main__':
       cin += '\n'
       print_raw(stamp)  #print timestamp
       print_raw('\033[33mSend:\033[0m ' + cin)
-      if multi_byte:
-        print_raw(get_now() + ' ')
-        print_warn('Does not fit in a Byte!\n')
-        print_raw(get_now() + ' ')
-        print_info('Sending multiple Bytes\n')
       if error_str != '':
         print_error(error_str+'\n')
       block_listener = True
