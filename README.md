@@ -62,7 +62,7 @@ When `--search` (or `-s`) is given as argument, script searches for *ttyUSB*, *t
 
 Software configurations handle how to interpret data and adds some options. Currently, implemented options (Bold for default values):
 
-* Data type: **character**, hexadecimal number, decimal number, binary number
+* Data type: character, **hexadecimal number**, decimal number, binary number
   * Determines how the data is interpreted. In character mode, everything is displayed and received as their character value. In numeric modes, data is taken and displayed in chosen base. In this mode user can specify bases with `0x`, `0b`, `0o` and `0d`.
 * Safe transmit: **Disabled**
   * In numeric mode, when a non-numeric data entered stop sending.
@@ -114,4 +114,9 @@ When using numeric modes, following characters can be used as separators: `_`,  
 
 ## Dependencies
 
-Script [uart.py](Sources/uart.py) uses *sys*, *pyserial*, *threading*, *time*, *datetime*, *os*, *random* and *signal* modules, and tested with Python 3.8.6 on Pop!_OS 20.10
+Script [uart.py](Sources/uart.py) uses *sys*, *pyserial*, *threading*, *time*, *datetime*, *os*, *random* and *signal* modules.
+
+Tested on
+
+- Python 3.9.5 on Pop!_OS 21.04
+- Python 3.8.6 on Pop!_OS 20.10
