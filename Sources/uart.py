@@ -1028,11 +1028,11 @@ if __name__ == '__main__':
       #Data handling
       send_str = ''
       toSend = 0
+      cin_org = ''  #to silence a warning
 
       if prefix is not None:
         for byte in prefix:
           serial_write(byte)
-
       if not char:
         cin = cin.replace('_', '').replace('\'', '').strip()
         #if input is to large divide it into single transfers
@@ -1069,34 +1069,34 @@ if __name__ == '__main__':
           else:
             max_data = 32
           try:
-            item_int = 0
+            item_int = -1
             if base == 'x':
               item_int = int(item, 16)
               while item_int > (max_data - 1):
                 current_item = ' ' + hex(int(item_int % max_data)) + current_item
                 item_int = int(item_int / max_data)
-              if item_int != 0:
+              if item_int != -1:
                 current_item = ' ' + hex(int(item_int % max_data)) + current_item
             elif base == 'd':
               item_int = int(item, 10)
               while item_int > (max_data-1):
                 current_item = ' 0d' + str(int(item_int % max_data)) + current_item
                 item_int = int(item_int / max_data)
-              if item_int != 0:
+              if item_int != -1:
                 current_item = ' 0d' + str(int(item_int % max_data)) + current_item
             elif base == 'o':
               item_int = int(item, 8)
               while item_int > (max_data - 1):
                 current_item = ' ' + oct(int(item_int % max_data)) + current_item
                 item_int = int(item_int / max_data)
-              if item_int != 0:
+              if item_int != -1:
                 current_item = ' ' + oct(int(item_int % max_data)) + current_item
             else:
               item_int = int(item, 2)
               while item_int > (max_data - 1):
                 current_item = ' ' + bin(int(item_int % max_data)) + current_item
                 item_int = int(item_int / max_data)
-              if item_int != 0:
+              if item_int != -1:
                 current_item = ' ' + bin(int(item_int % max_data)) + current_item
             cin_temp += current_item
           except ValueError:
