@@ -83,32 +83,33 @@ When in a numeric data mode; data must be entered as a numeric value with respec
 
 Commands allow user to change software configurations and interact with the script. Each command start with a single `\`, anything else considered as data. To send a `\` as first byte, use `\\`. Table of available commands can be found below.
 
-|Command|Shortened|Description|
-|:---:|:---:|---|
-|`bin`|-|Binary data mode|
-|`binhex`|-|Binary data mode, also print hexadecimal equivalent|
-|`char`|`c`|Character data mode|
-|`dec`|-|Decimal data mode|
-|`dechex`|-|Decimal data mode, also print hexadecimal equivalent|
-|`dump [filename]`|-|Dump received bytes into a file, filename can be given as argument|
-|`exit`|-|Exits the script same as `quit`|
-|`getpath`|-|Prints working directory|
-|`hex`|`h`|Hexadecimal data mode|
-|`help`|-|Prints information about the script|
-|`keeplog`|-|Do not delete program log on exit|
-|`license`|-|Prints license information|
-|`mute`|-|Do not show received data on terminal|
-|`nodump`|-|Stop dumping received data|
-|`pref [data]`|-|Add bytes to prefix, data should be given as hexadecimal|
-|`rand [data size]`|`r`|Send random bytes|
-|`quit`|`q`|Exits the script same as `exit`|
-|`safe`|-|Enable safe transmit mode|
-|`send`|`s`|Send files|
-|`setpath`|-|set directory for file operations, full or relative path, empty for cwd |
-|`suff [data]`|-|Add bytes to suffix, data should be given as hexadecimal|
-|`unmute`|-|Show received data on terminal|
-|`unsafe`|-|Disable safe transmit mode|
-|`@`|-|Print the path to the connected device|
+|      Command       | Shortened | Description                                                             |
+|:------------------:|:---------:|-------------------------------------------------------------------------|
+|       `bin`        |     -     | Binary data mode                                                        |
+|      `binhex`      |     -     | Binary data mode, also print hexadecimal equivalent                     |
+|       `char`       |    `c`    | Character data mode                                                     |
+|       `dec`        |     -     | Decimal data mode                                                       |
+|      `dechex`      |     -     | Decimal data mode, also print hexadecimal equivalent                    |
+| `dump [filename]`  |     -     | Dump received bytes into a file, filename can be given as argument      |
+|       `exit`       |     -     | Exits the script same as `quit`                                         |
+|     `getpath`      |     -     | Prints working directory                                                |
+|       `hex`        |    `h`    | Hexadecimal data mode                                                   |
+|       `help`       |     -     | Prints information about the script                                     |
+|     `keeplog`      |     -     | Do not delete program log on exit                                       |
+|     `license`      |     -     | Prints license information                                              |
+|       `list`       |     -     | Prints connected devices                                                |
+|       `mute`       |     -     | Do not show received data on terminal                                   |
+|      `nodump`      |     -     | Stop dumping received data                                              |
+|   `pref [data]`    |     -     | Add bytes to prefix, data should be given as hexadecimal                |
+| `rand [data size]` |    `r`    | Send random bytes                                                       |
+|       `quit`       |    `q`    | Exits the script same as `exit`                                         |
+|       `safe`       |     -     | Enable safe transmit mode                                               |
+|       `send`       |    `s`    | Send files                                                              |
+|     `setpath`      |     -     | set directory for file operations, full or relative path, empty for cwd |
+|   `suff [data]`    |     -     | Add bytes to suffix, data should be given as hexadecimal                |
+|      `unmute`      |     -     | Show received data on terminal                                          |
+|      `unsafe`      |     -     | Disable safe transmit mode                                              |
+|        `@`         |     -     | Print the path to the connected device                                  |
 
 When using numeric modes, following characters can be used as separators: `_`,  `'`
 

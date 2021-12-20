@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #*-------------------------------------------*#
-#  Title       : UART Tool v1.4.2             #
+#  Title       : UART Tool v1.4.3             #
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
@@ -193,6 +193,7 @@ def print_help():
   print_raw('   ~ \033[7m\\hex\033[0m     : print received bytes as hexadecimal number\n')
   print_raw('   ~ \\keeplog : do not delete programme log\n')
   print_raw('   ~ \\license : prints license information\n')
+  print_raw('   ~ \\list    : prints connected devices\n')
   print_raw('   ~ \\mute    : do not print received received to terminal\n')
   print_raw('   ~ \\nodump  : stop dumping received bytes in dumpfile\n')
   print_raw('   ~ \\pref    : add bytes to send before transmitted data, arguments should be given as hexadecimal\n')
@@ -297,7 +298,7 @@ if __name__ == '__main__':
   log_directory = '.uart_tool'
   program_log = None
   log_lock = False
-  print_info('Welcome to the UART tool v1.4.2!\n')
+  print_info('Welcome to the UART tool v1.4.3!\n')
   baud = 115200
   serial_path = '/dev/ttyUSB'
   data_size = serial.EIGHTBITS
@@ -618,7 +619,7 @@ if __name__ == '__main__':
   try:
     if not os.path.isdir(log_directory):
       os.mkdir(log_directory)
-    program_log = log_directory + 'uart_' + start_time.strftime('%Y-%m-%d_%Hh%Mm%Ss') + '.log'
+    program_log = log_directory + '/uart_' + start_time.strftime('%Y-%m-%d_%Hh%Mm%Ss') + '.log'
     log = open(program_log, 'a')
     log.write(get_log_time(start_time))
     log.write('debug: program start\n')
@@ -630,15 +631,15 @@ if __name__ == '__main__':
     print_error(str(e)+'\n')
     print_info('Running without a log\n')
 
-  print_success('\nConnected to ' + serial_path)
-  print_info('\nConfigurations: ' + str(baud) + ' ' + str(data_size) + ' bits with ' + par_str + ' parity and ' + str(
-    stop_size) + ' stop bit(s)\n\n')
-
   try:
     uart_conn = Serial(serial_path, baud, data_size, par, stop_size)
   except Exception as e:
     print_fatal(str(e) + '\n')
     sys.exit(2)
+
+  print_success('\nConnected to ' + serial_path)
+  print_info('\nConfigurations: ' + str(baud) + ' ' + str(data_size) + ' bits with ' + par_str + ' parity and ' + str(
+    stop_size) + ' stop bit(s)\n\n')
 
   #Set up listener daemon
   try:
@@ -760,7 +761,7 @@ if __name__ == '__main__':
         else:
           try:
             log_lock = True
-            program_log = log_directory + 'uart_' + start_time.strftime('%Y%m%dh%Hm%Ms%S') + '.log'
+            program_log = log_directory + '/uart_' + start_time.strftime('%Y%m%dh%Hm%Ms%S') + '.log'
             log = open(program_log, 'a')
             log.write(get_log_time(start_time))
             log.write('program start\n')
@@ -931,6 +932,29 @@ if __name__ == '__main__':
             random_bytes += (hex(random_byte)+' ')
           print_raw('\n\033[F' + get_now() + ' \033[33mSend: \033[0m\033[96m'+random_bytes+'\033[0m\n')
           block_listener = True
+        block_listener = True
+        print_input_symbol()
+        continue
+      elif cin == '\\list':
+        print_time_stamp()  #print timestamp
+        print_info('Current connection: \033[0m\033[32m' + serial_path + '\n', False)
+        print_info('Other devices:\n', False)
+        poll_list = ['/dev/ttyUSB', '/dev/ttyACM', '/dev/ttyCOM']
+        for poll_path in poll_list:
+          for i in range(search_range + 1):
+            current = poll_path + str(i)
+            if current == serial_path:
+              continue
+            if os.path.exists(current):
+              print_info('~ ', False)
+              try:
+                uart_conn = Serial(current, timeout=1)
+                uart_conn.close()
+                print_raw(current + '\n')
+              except serial.SerialException:
+                print_warn(current + ', cannot connect!\n', False)
+              except Exception as search_err:
+                print_error(current + ', ' + str(search_err) + '\n', False)
         block_listener = True
         print_input_symbol()
         continue
