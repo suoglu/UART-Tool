@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #*-------------------------------------------*#
-#  Title       : UART Tool v1.4.1             #
+#  Title       : UART Tool v1.4.2             #
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
@@ -26,6 +26,7 @@ global listener_alive
 global block_listener
 global log_listener_check
 global program_log
+global log_directory
 global log
 global log_lock
 
@@ -157,7 +158,7 @@ class ListenerControl(Exception):
 
 def check_listener(signum, frame):
   global log_listener_check
-  if log_listener_check:  #so that log wont be spammed with it
+  if log_listener_check:  #so that log won't be spammed with it
     log_listener_check = False
     msg = 'debug: listener daemon check ' + str(signum) + ' ' + str(frame)
     log_thread = threading.Thread(target=log_write, args=[msg])
@@ -293,9 +294,10 @@ def uart_listener():  #? if possible, keep the prompt already written in termina
 #Main function
 if __name__ == '__main__':
   start_time = datetime.now()
+  log_directory = '.uart_tool'
   program_log = None
   log_lock = False
-  print_info('Welcome to the UART tool v1.4.1!\n')
+  print_info('Welcome to the UART tool v1.4.2!\n')
   baud = 115200
   serial_path = '/dev/ttyUSB'
   data_size = serial.EIGHTBITS
@@ -614,7 +616,9 @@ if __name__ == '__main__':
 
   #Prepare program log
   try:
-    program_log = 'uart_' + start_time.strftime('%Y-%m-%d_%Hh%Mm%Ss') + '.log'
+    if not os.path.isdir(log_directory):
+      os.mkdir(log_directory)
+    program_log = log_directory + 'uart_' + start_time.strftime('%Y-%m-%d_%Hh%Mm%Ss') + '.log'
     log = open(program_log, 'a')
     log.write(get_log_time(start_time))
     log.write('debug: program start\n')
@@ -756,7 +760,7 @@ if __name__ == '__main__':
         else:
           try:
             log_lock = True
-            program_log = 'uart_' + start_time.strftime('%Y%m%dh%Hm%Ms%S') + '.log'
+            program_log = log_directory + 'uart_' + start_time.strftime('%Y%m%dh%Hm%Ms%S') + '.log'
             log = open(program_log, 'a')
             log.write(get_log_time(start_time))
             log.write('program start\n')
