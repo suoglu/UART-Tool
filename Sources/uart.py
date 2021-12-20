@@ -5,7 +5,7 @@
 #  File        : uart.py                      #
 #  Author      : Yigit Suoglu                 #
 #  License     : EUPL-1.2                     #
-#  Last Edit   : 02/09/2021                   #
+#  Last Edit   : 20/12/2021                   #
 #*-------------------------------------------*#
 #  Description : Python3 script for serial    #
 #                communication via UART       #
